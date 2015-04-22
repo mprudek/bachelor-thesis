@@ -1,0 +1,67 @@
+ \input ctustyle
+ \input opmac-bib
+ \worktype [B/CZ]
+ \faculty {F3}
+ \department {Katedra řídicí techniky}
+ \title {Řízení bezkartáčových motorů s deskou Raspberry Pi a Linuxem}
+ \author {Martin Prudek}
+ \date {Duben 2015}
+ \abstractEN {Testing}
+ \abstractCZ {Testovani}
+ \declaration {Prohlasuji, ze jsem pracoval poctive.}
+ \makefront
+ 
+ \chap Motivace
+ 
+ Značné zlevnění a zpřístupnění jednodeskových minipočítačů v posledních letech u nás vyvolalo otázku, zda je možné některé hojně rozšířene modely využít k řídicím aplikacím.
+ 
+  Z široké nabídky zařízení jsme vybrali Raspberry PI model B rev. 2.0. U tohoto počítače již byla prostudována možnost řízení motoru stejnosměrného motoru zachytáváním impulzů inkrementálního rotačního senzoru polohy\cite[Meciar]. Takové řízení je však vlivem nedostatečného výpočetního výkonu možné jen do 14kHz (2100ot/min). Proto bylo zpracování hrubých senzorových dat přesunuto do FPGA obvodu, se kterým Raspberry komunikuje prostřednictvím protokolu SPI.
+  
+  Jednosměrný bezkartáčový motor byl dále nahrazen efektivnějším PMS motorem.
+ 
+ 
+ \chap PMS motory.
+
+PMS (Permanent Magnet Synchronous) motory jsou díky vysoké efektivitě a robustní kontrukci bez kartáčů vhodnou volbou v mnoha řídicích aplikacích. 
+
+Komutace probíhá na rozdíl od kartáčových motorů elektronicky, což přínáší vyšší požadavky na řídicí hardware. Odměnou je výšší výkon v poměru k váze, stejně tak točivý moment v poměru k příkonu. Výhodou jsou také nížší hlučnost a delší životnost, protože nedochází k opotřebení kartáčů a mechanických částí komutátoru. \cite[PMSM-Kinetis] Elektronická komutace bývá implementována v procesorovém systému, či speciálním obvodu (FPGA / ASIC)\cite[Meloun].
+ 
+ \sec Konstrukce
+ 
+ Text v sekci.
+ 
+ \sec Řízení
+ 
+ 
+ \chap Popis hardware
+ 
+ Text v sekci.\cite[AGL125] \cite[Libero_ug] \cite[rt-wiki]
+ 
+ \chap Použité řešení
+ 
+ Text v sekci.
+ 
+ \chap Závěr
+ 
+ \sec pokyny
+ 
+Na platformě procesorové desky Raspberry Pi implementujte systém pro řízení bezkartáčových (BLDC/PMSM) motorů.
+
+1. Pro komunikaci procesorového systému s výkonovým hardwarem realizovaným s využitím programovatelného obvodu (FPGA) vyberte vhodný protokol a periferii.
+
+2. Pro vybraný způsob komunikace navrhněte ovladač na straně jádra Linux a obvodový návrh ve VHDL na straně FPGA.
+
+3. Integrujte bloky pro snímání polohy, řízení výkonových stupňů a měření proudu do FPGA návrhu.
+
+4. S využitím navržených periferií realizujte řízení bezkartáčového motoru.
+
+5. Vyžaduje se podrobná technická dokumentace včetně přípravy podkladů pro prezentaci včetně videozáznamu.
+
+ \bibchap
+ \usebib/c (simple) mybase
+ 
+ 
+ 
+ \bye
+  
+ 
