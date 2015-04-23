@@ -43,20 +43,28 @@ Komutace probíhá na rozdíl od kartáčových motorů elektronicky, což pří
  
  Raspberry Pi je jednodeskový počítač založený na rodině architektury ARM, který se v současnosti dodavá v několika variantách.
  
- Základem první verze tohoto minipočítače je \glref{SoC} BCM2835, který obsahuje centrální procesor ARM1176JZF-S s taktem 700 MHz, grafický procesor VideoCore IV a 256 MiB nebo 512 MiB  paměti RAM. Neumožňuje však připojení pevného disku. Opearační systém a data, která mají být uchována i po restartu zařízení je třeba uložit na SD kartu, jejíž slot je k dispozici. Protože procesorová jednotka typu ARM11 využíva poměrně zastaralou architekturu ARMv6 s nedostatečnou hardwarovou podporou pro výpočty v polovoucí řádové čárce  \glref{VFP}v2 \cite[ARM11] \fnote{ARM11 Online Technical Reference Manual \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0301h/Cegdejjh.html}}, je nutná rekompilace distribuce systému Debian/Raspbian. Oficiální port této distribuce ARMhf totiž vyžaduje alespoň architektutu ARMv7 s koprocesorem pro výpočty v plovoucí řádové čárce nejméně ve verzi VFPv3-D16. \fnote{Debian, List of official ports \url{https://www.debian.org/ports/}}
+ Základem první verze tohoto minipočítače je \glref{SoC} BCM2835, který obsahuje centrální procesor ARM1176JZF-S s taktem 700 MHz, grafický procesor VideoCore IV a 256 MB nebo 512 MB  paměti RAM. Neumožňuje však připojení pevného disku. Opearační systém a data, která mají být uchována i po restartu zařízení je třeba uložit na SD kartu, jejíž slot je k dispozici. Protože procesorová jednotka typu ARM11 využíva poměrně zastaralou architekturu ARMv6 s nedostatečnou hardwarovou podporou pro výpočty v polovoucí řádové čárce  \glref{VFP}v2 \cite[ARM11] \fnote{ARM11 Online Technical Reference Manual \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0301h/Cegdejjh.html}}, je nutná rekompilace distribuce systému Debian/Raspbian. Oficiální port této distribuce ARMhf totiž vyžaduje alespoň architektutu ARMv7 s koprocesorem pro výpočty v plovoucí řádové čárce nejméně ve verzi VFPv3-D16. \fnote{Debian, List of official ports \url{https://www.debian.org/ports/}}
  
-Druhá verze Raspberry Pi přinesla zvýšení výpočetního výkonu s růstem taktu procesoru na 900Mhz a využitím čtyř výpočetních jader. To vše pod modernější architekturou ARMv7-A s procesorem ARM Coretx-A7.je momentálně k dispozici jen v modelu B.
+Druhá verze Raspberry Pi přinesla zvýšení výpočetního výkonu s růstem taktu procesoru na 900Mhz a využitím čtyř výpočetních jader. To vše pod modernější architekturou ARMv7-A s procesorem ARM Cortex-A7 (podpora \glref{VFP}v4 \cite[CA_VFP] \fnote{ARM Cortex-A7 Online Technical Reference Manual \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.subset.cortexa.cortexa7/index.html}}) v čipu BCM2836. Tato verze počítače je tak se současnými distribucemi plně kompatibilní. Kromě vyššího výpočetního výkonu došlo i k nárustu hlavní paměti na 1GB. Momentálně je k dispozici jen v modelu B, který navazuje na model B+ verze 1.
+
+
  
 
 
 
-\ctable{lcccc}{ 
-	\hfil Model & A & A+ & B & B rev 2.0 \crl
-		Počet pinů & 0 & 0 & 0 & 0   \cr
-		RAM paměť  & 0 & 0 & 0 & 0   \cr
-		USB porty
+\ctable{lccccc}{ 
+	\hfil Model & A & A+ & B & B+ & Bv2 \crl
+		Počet pinů & 26 & 40 & 26 & 40 & 40  \cr
+		RAM paměť [MB]  & 256 & 256 & 256/512 & 512 & 1024   \cr
+		USB porty & 1 & 1 & 2 & 4  & 4 \cr
+		RJ45 & Ne & Ne & Ano & Ano  & Ano \cr
+		Slot na kartu & SDHC & MicroSD & SD & MicroSD & MicroSD   \cr
+		Příkon [W] & 1.5 & 1.0 & 3.5 & 3 & 4  \cr
+		Takt CPU [MHz] & 700 & 700 & 700 & 700 & 900  \cr
+		Jádra CPU [MHz] & 1 & 1 & 1 & 1 & 4  \cr
+		CPU Arch [W] & ARMv6 & ARMv6 & ARMv6 & ARMv6 & ARMv7-A  \cr
 }
-\caption/t Seznam modelů Raspberry Pi
+\caption/t Seznam modelů Raspberry Pi \cite[RPi_comp]
  
  \sec Linux a RT vylepšení
  
