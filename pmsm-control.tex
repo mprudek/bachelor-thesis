@@ -1,4 +1,5 @@
  \input ctustyle
+ \input glosdata
  \input opmac-bib
  \worktype [B/CZ]
  \faculty {F3}
@@ -10,6 +11,7 @@
  \abstractCZ {Testovani}
  \declaration {Prohlasuji, ze jsem pracoval poctive.}
  \makefront
+ 
  
  \chap Motivace
  
@@ -35,6 +37,31 @@ Komutace probíhá na rozdíl od kartáčových motorů elektronicky, což pří
  
  \chap Popis hardware
  
+ \sec Použitý motor
+ 
+ \sec Raspberry Pi
+ 
+ Raspberry Pi je jednodeskový počítač založený na rodině architektury ARM, který se v současnosti dodavá v několika variantách.
+ 
+ Základem první verze tohoto minipočítače je \glref{SoC} BCM2835, který obsahuje centrální procesor ARM1176JZF-S s taktem 700 MHz, grafický procesor VideoCore IV a 256 MiB nebo 512 MiB  paměti RAM. Neumožňuje však připojení pevného disku. Opearační systém a data, která mají být uchována i po restartu zařízení je třeba uložit na SD kartu, jejíž slot je k dispozici. Protože procesorová jednotka typu ARM11 využíva poměrně zastaralou architekturu ARMv6 s nedostatečnou hardwarovou podporou pro výpočty v polovoucí řádové čárce  \glref{VFP}v2 \cite[ARM11] \fnote{ARM11 Online Technical Reference Manual \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0301h/Cegdejjh.html}}, je nutná rekompilace distribuce systému Debian/Raspbian. Oficiální port této distribuce ARMhf totiž vyžaduje alespoň architektutu ARMv7 s koprocesorem pro výpočty v plovoucí řádové čárce nejméně ve verzi VFPv3-D16. \fnote{Debian, List of official ports \url{https://www.debian.org/ports/}}
+ 
+Druhá verze Raspberry Pi přinesla zvýšení výpočetního výkonu s růstem taktu procesoru na 900Mhz a využitím čtyř výpočetních jader. To vše pod modernější architekturou ARMv7-A s procesorem ARM Coretx-A7.je momentálně k dispozici jen v modelu B.
+ 
+
+
+
+\ctable{lcccc}{ 
+	\hfil Model & A & A+ & B & B rev 2.0 \crl
+		Počet pinů & 0 & 0 & 0 & 0   \cr
+		RAM paměť  & 0 & 0 & 0 & 0   \cr
+		USB porty
+}
+\caption/t Seznam modelů Raspberry Pi
+ 
+ \sec Linux a RT vylepšení
+ 
+ \sec FPGA
+ 
  Text v sekci.\cite[AGL125] \cite[Libero_ug] \cite[rt-wiki]
  
  \chap Použité řešení
@@ -43,6 +70,16 @@ Komutace probíhá na rozdíl od kartáčových motorů elektronicky, což pří
  
  \chap Závěr
  
+
+ 
+
+
+
+ \bibchap
+ \usebib/c (simple) mybase
+
+\app Zadání
+
  \sec pokyny
  
 Na platformě procesorové desky Raspberry Pi implementujte systém pro řízení bezkartáčových (BLDC/PMSM) motorů.
@@ -57,9 +94,10 @@ Na platformě procesorové desky Raspberry Pi implementujte systém pro řízen�
 
 5. Vyžaduje se podrobná technická dokumentace včetně přípravy podkladů pro prezentaci včetně videozáznamu.
 
- \bibchap
- \usebib/c (simple) mybase
- 
+\app Zkratky\par \makeglos %vlozi novou prilohu
+
+
+
  
  
  \bye
