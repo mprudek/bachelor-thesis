@@ -14,21 +14,45 @@
  
  \def\frac#1#2{{\begingroup#1\endgroup\over#2}} %/frac je LaTex, definujme vlastni
 
- \chap Motivace
+ \chap Úvod
  
- Značné zlevnění a zpřístupnění jednodeskových minipočítačů v posledních letech u nás vyvolalo otázku, zda je možné některé hojně rozšířene modely využít k řídicím aplikacím.
- 
-  Z široké nabídky zařízení jsme vybrali Raspberry PI model B rev. 2.0. U tohoto počítače již byla prostudována možnost řízení motoru stejnosměrného motoru zachytáváním impulzů inkrementálního rotačního senzoru polohy\cite[Meciar]. Takové řízení je však vlivem nedostatečného výpočetního výkonu možné jen do 14kHz (2100ot/min). Proto bylo zpracování hrubých senzorových dat přesunuto do FPGA obvodu, se kterým Raspberry komunikuje prostřednictvím protokolu SPI.
+  S přechodem od analogových regulačních obvodů ke stále rozvinutějším digitalním řidicím zařízením je možné využít automatizaci i tam, kde to dříve nebylo možné. Je to patrné například na stále běžnějším využití ruzných dronů či multikoptér. Zařízení dříve považovaná za přísně střežená vojenská tajemství se dnes, jako už mnohokrát v dějinách, stávají běžnou součástí našich domácností. 
   
-  Jednosměrný bezkartáčový motor byl dále nahrazen efektivnějším PMS motorem.
+  Vývoj se však nepohybuje jen ve směru zdokonalování technologií, neboť v mnoha situacích je rozhodujícím faktorem cena. Návrhář řídicího systému se musí v hojných případech rozhodovat mezi dvěma variantami. Buď použít často velmi levný analogový řídicí obvod, který je ale úzce specializovaný a při úpravě parametrů se jeho modifikace dále velmi prodražují. Nebo řídicí počítač, který při změně problému stačí mnohdy jen přeprogramovat. Na trh se tak dostává mnoho velmi levných zařízení, z nichž některá jsou myšlena spíše jako hračky či výúkové nástroje. Přesto může být zajímavé takové zařízení otestovat a použít k vážněji myšlenému řízení. Z široké nabídky takových zařízení, jako jsou BeagleBone, Raspberry Pi či Banana Pi  
+ \fnote{Root.cz, Srovnání: Raspberry Pi a jeho největší konkurenti \url{http://www.root.cz/clanky/srovnani-raspberry-pi-a-jeho-nejvetsi-konkurenti/}} 
+ jsme vybrali pro tuto práci Raspberry PI model B rev. 2.0. 
  
+ {\bf Raspberry Pi} (dále jen Rpi) je počítač realizovaný na jednom plošném spoji, velikosti kreditní karty, který od roku 2006 vyvíjí britská nadace {\em Raspberry Pi Foundation} \fnote{web Raspberry Pi Foundation\url{https://www.raspberrypi.org/}}. Výhodou je možnost využití univerzálního operačního systému, například výrobcem poskytovaného Raspbianu. Jako na Linuxovou distribuci je pak možné na tento systém aplikovat Real-Time vylepšení, které zajistí splnění časových omezení vyžadovaných řízením. Více k Rpi a RT vylepšení Linuxu uvedu v sekci \ref[sec_rpi] a \ref[sec_rt].
  
+ U tohoto počítače již byla prostudována možnost řízení stejnosměrného motoru s využitím zachytávání impulzů inkrementálního rotačního senzoru polohy \cite[Meciar]. Stejně tak jako u podobných levných zařízení i zde však naražíme na hranice, které nám nevýkonný hardware nedovoluje překonat. U \glref{RPi} tak docházelo ke kritickým časovým prodlevám při zpracovávání přijatých pulsů. Takové chování nastávalo již od frekvence pulsů 14kHz, což při 500 pulsech na jednu otočku dělá 2100ot/min.
+ 
+ Výdodným řeším tohoto problému se stává přesunutí zpracování pulsů \glref{IRC} do speciálního obvodu a zjištěnou polohu motoru posílat jako celek. Rpi tedy zpracovává jen jednu řídicí smyčku o neměnné frekvenci, z hlediska výpočetního výkonu tedy již otáčky motoru nehrají roli. Pro tuto práci se tímto obvodem stala deska s \glref{FPGA} obvodem , vyvinutá firmou {\em PiKRON} \fnote{PiKRON \url{http://www.pikron.com/}}. Podrobnosti v sekci \ref[sec_fpga].
+ 
+ Pro komunikaci s FPGA obvodem bylo třeba vybrat jednoduchý komunikační protokol. Požadavkem byla možnost obousměrné komunikace a současně vzhledem k frekvenci řídicí smyčky a objemu přenesených dat dostatečná rychlost. Bylo také nutné, aby použitý protokol byl natolik nekomplikovaný, že půjde výhodně realizovat v FPGA obvodu a na straně druhé pohodlně zpracovat v jádře operačního systému na RPi. 
+ 
+ Jak jsem již zmínil, překotný vývoj digitálních řidicích zařizení hlavně koncem druhé poloviny 20. století nábídl možnosti jejich využití i tam, kde to dříve nebylo možné. Přikladem nechť je vývoj synchronního bezkartáčového motoru s permanentním magnetem v rotoru (dále PMS motory či jen PMSM). Bez digitálního zpracování dat a PWM modulace by jeho provoz nebyl možný. Takový motor přitom nabízí ve srovnáním s konvenčním indukčním(asynchronním) motorem hned několik výhod. Nejdůležitějšími jsou plynulé řízení polohy, rychlosti a točivého momentu. Oproti kartáčovému DC motoru pak odpadá použití kartáčů, kolísání točivého momentu a zvvyšuje se efektivita. Více o PMS motorech uvedu v kapitole \ref[chap_pmsm].
+
+ 
+ \label[chap_pmsm]
  \chap PMS motory.
 
 PMS (Permanent Magnet Synchronous) motory jsou díky vysoké efektivitě a robustní kontrukci bez kartáčů vhodnou volbou v mnoha řídicích aplikacích\cite[ESD]. 
 
-Komutace probíhá na rozdíl od kartáčových motorů elektronicky, což přínáší vyšší požadavky na řídicí hardware. Odměnou je výšší výkon v poměru k váze, stejně tak točivý moment v poměru k příkonu. Výhodou jsou také nížší hlučnost a delší životnost, protože nedochází k opotřebení kartáčů a mechanických částí komutátoru. \cite[PMSM-Kinetis] Elektronická komutace bývá implementována v procesorovém systému, či speciálním obvodu (FPGA / ASIC)\cite[Meloun].
+Komutace probíhá na rozdíl od kartáčových motorů elektronicky, což přínáší vyšší požadavky na řídicí hardware. Ve chvíli, kdy dnes většina aplikací vyžaduje elektronické řízení jak rychlosti, tak točivého momentu, nepředstavuje ale řídicí elektronika zátěž navíc. \cite[sensorless]. Odměnou je naopak výšší výkon v poměru k váze, stejně tak točivý moment v poměru k příkonu. Výhodou jsou také nížší hlučnost a delší životnost, protože nedochází k opotřebení kartáčů a mechanických částí komutátoru. \cite[PMSM-Kinetis] Elektronická komutace bývá implementována v procesorovém systému, či speciálním obvodu (FPGA / ASIC)\cite[Meloun].
  
+ 3-fázové synchronní motory s permanentním magnetem se často využívají kromě PMS varianty se sinusovým průběhem \glref{BEMF} také v \glref{BLDC} variantě s lichoběžníkovým (trapezoidal) průběhem BEMF. Přičemž výhodou PMSM je konstatní točivý moment v celém rozsahu otáčení, zatímco BLCD motor je snadněji řiditelný a dnes se využívá převážně z historických  důvodů. \cite[sensorless]
+ \sec Konstrukce
+ 
+ Základ konstrukce PMS Motoru je postaven na konstrukci 3-fázového indukčního (asynchronního) motoru.
+ 
+ Statorem prochází vinutí jednotlivých fází. Počet vinutí pak závisí na počtu pólů permanentního magnetu umístěného ve statoru. Obvyklá varianta jsou dva páry pólů permanentního magnetu, viz Obrázek \ref[pole_pairs]. Celý návrh je přitom optimalizován pro buzení sinusovým průběhem, stejně tak zpětné  elktromotorické napětí vykazuje sinusový průběh. \cite[ijetae] \cite[ti_pmsm].
+ 
+\medskip \clabel[pole_pairs]{PMS Motor se dvěma pólovými dvojicemi}
+\picw=8cm \cinspic PMSM.png
+\caption/f PMS Motor se dvěma pólovými dvojicemi
+\medskip 
+
+
  \sec Matematický popis
  
  Uvažujme $i_{sa}$, $i_{sb}$ a $i_{sc}$ proudy procházející vinutím statoru, platí:
@@ -72,7 +96,7 @@ u_{sa}=R_si_{sa}+{{d}\over{dt}}\psi_{sa} \eqmark$$
 $$ u_{sb}=R_si_{sb}+{{d}\over{dt}}\psi_{sb} \eqmark$$
 $$ u_{sc}=R_si_{sc}+{{d}\over{dt}}\psi_{sc} \eqmark$$
 
-kde $\psi_{sa}$,$\psi_{sb}$ a $\psi_{sc}$ jsou magnetické indukční toky vyvolané proudy odpovídajících vinutí. Vyjádření napětí vektorem v Gaussově(komplexní) rovině (Clarkova transformace) bude následující:
+kde $\psi_{sa}$,$\psi_{sb}$ a $\psi_{sc}$ jsou magnetické indukční toky vyvolané proudy odpovídajících vinutí. Vyjádření napětí vektorem v Gaussově(komplexní) rovině (Clarkova transformace, $\alpha\beta$ transformace) bude následující:
 
  $$ u_{s\alpha}=R_si_{s\alpha}+{{d}\over{dt}}\psi_{s\alpha} \eqmark$$
  $$ u_{s\beta}=R_si_{s\beta}+{{d}\over{dt}}\psi_{s\beta} \eqmark$$
@@ -87,37 +111,73 @@ kde $\psi_{sa}$,$\psi_{sb}$ a $\psi_{sc}$ jsou magnetické indukční toky vyvol
 Úhlové zrychlení takového motoru o zátěži $T_L$ s $p$ póly připadajícími na každou fázi můžeme vyjádřit jako:
 
 $$
+\label[rce2]
 {d\omega\over{dt}}=
 {p\over{j}}\lbrack{3\over{2}}p(\psi_{s\alpha}i_{s\beta}-\psi_{s\beta}i_{s\alpha})-T_L\rbrack
+\eqmark
 $$
 
-Rovnice \ref[rce1].
-
- 
+Rovnice \ref[rce1] az \ref[rce2] představují model PMS motoru v souřadné soustavě ($\alpha, \beta$) spojené se statorem.
 
 
+Kromě soustavy spojené se statorem bývá někdy výhodné vyjádřit tyto večiny v soustavě spojené s rotorem.
+Jak bude dále vysvětleno, je totiž výhodné, aby vektor megnetické indukce, magnetického pole vyvolávaného proudy protékající vinutím statoru, svíral pravý úhel s vektorem mg. indukce mg. pole permanentního magnetu rotoru. Pro tyto účely je tedy vhodné veličiny fixovat právě k souřadné soustavě rotoru. 
 
+Pro statickou soustavu jsme úspěchem využili Clarkovu trnsformaci, nyní, pro rotující vztažnou soustavu použijeme Parkovu (dq0) transformaci.
 
+Pro genralizovanou rotující soustavu bude transformace vypadat následovně (viz Obrázek \ref[park]):
+
+$$ \overline{i_{sg}}=\overline{i_s}e^{-j\theta_g} \eqmark$$
+
+\medskip \clabel[park]{Parkova transformace}
+\picw=8cm \cinspic StatorCurrents.png
+\caption/f Parkova transformace
+\medskip 
+
+A pro soustavu spojenou s rotorem již můžeme dosadit:
+
+$$u_{sd}=R_si_{sd}+{d\over{dt}}\psi_{sd}-\omega_r\psi_{sq} \eqmark $$
+$$u_{sq}=R_si_{sq}+{d\over{dt}}\psi_{sq}-\omega_r\psi_{sd} \eqmark $$
+
+kde $\psi$ jsou odpovídající mg. indukční toky a $\omega_r$ je úhlová rychlost rotoru.
+
+ $$\psi_{sd} = L_{sd}i_{sd} + \psi_M \eqmark$$
+ $$\psi_{sq} = L_{sq}i_{sq} \eqmark$$
  
+Úhlové zrychlení: 
  
- 
- 
- \sec Konstrukce
- 
- Text v sekci.
- 
+$$
+\label[rce3]
+{d\omega\over{dt}}=
+{p\over{j}}\lbrack{3\over{2}}p(\psi_{sd}i_{sd}-\psi_{sq}i_{sq})-T_L\rbrack
+\eqmark
+$$
+
+ \midinsert \clabel[dq0]{Poloha os Parkovy transformace}
+\picw=8cm \cinspic dq0.png
+\caption/f Osy d(direct) a q(quadrature) jsou voleny vzhledem k rotoru.
+\endinsert 
+
  \sec Řízení
+ 
+ PMS Motory se vyznačují plynulou rychlostí v celém rozsahu rotace a schopností plně řídit točivý moment i při nulové rychlosti. K tomu se využívaji techniky vektorového řízení. Ty rozloží proud protékající vinutím statoru na složky generující magnetické pole a točivý moment. Tyto složky pak můžeme řídit na sobě nezávisle a přiblížit se tak řízení obyčeného kartáčového DC motoru \cite[PMSMC]. Metematickým nástrojem jsou Clarkova a Parkova transformace popsané výše v této kapitole.
  
  
  \chap Popis hardware
  
  \sec Použitý motor
  
+ \label[sec_rpi]
  \sec Raspberry Pi
  
  Raspberry Pi je jednodeskový počítač založený na rodině architektury ARM, který se v současnosti dodavá v několika variantách.
  
  Základem první verze tohoto minipočítače je \glref{SoC} BCM2835, který obsahuje centrální procesor ARM1176JZF-S s taktem 700 MHz, grafický procesor VideoCore IV a 256 MB nebo 512 MB  paměti RAM. Neumožňuje však připojení pevného disku. Opearační systém a data, která mají být uchována i po restartu zařízení je třeba uložit na SD kartu, jejíž slot je k dispozici. Protože procesorová jednotka typu ARM11 využíva poměrně zastaralou architekturu ARMv6 s nedostatečnou hardwarovou podporou pro výpočty v polovoucí řádové čárce  \glref{VFP}v2 \cite[ARM11] \fnote{ARM11 Online Technical Reference Manual \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0301h/Cegdejjh.html}}, je nutná rekompilace distribuce systému Debian/Raspbian. Oficiální port této distribuce ARMhf totiž vyžaduje alespoň architektutu ARMv7 s koprocesorem pro výpočty v plovoucí řádové čárce nejméně ve verzi VFPv3-D16. \fnote{Debian, List of official ports \url{https://www.debian.org/ports/}}
+ 
+\midinsert \clabel[RPiB+]{Raspberry Pi v1 model B+}
+\picw=8cm \cinspic Raspberry_Pi_B+_top.png
+\caption/f Raspberry Pi verze 1 model B+
+\endinsert 
  
 Druhá verze Raspberry Pi přinesla zvýšení výpočetního výkonu s růstem taktu procesoru na 900Mhz a využitím čtyř výpočetních jader. To vše pod modernější architekturou ARMv7-A s procesorem ARM Cortex-A7 (podpora \glref{VFP}v4 \cite[CA_VFP] \fnote{ARM Cortex-A7 Online Technical Reference Manual \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.subset.cortexa.cortexa7/index.html}}) v čipu BCM2836. Tato verze počítače je tak se současnými distribucemi plně kompatibilní. Kromě vyššího výpočetního výkonu došlo i k nárustu hlavní paměti na 1GB. Momentálně je k dispozici jen v modelu B, který navazuje na model B+ verze 1. Na rozdíly jednotlivých variant odkazuje tabulka \ref[RPi_Modely]
 
@@ -141,13 +201,11 @@ Nevýhodou použitých SoC v obou verzích je chybějící integrovaná podpora 
 \caption/t Seznam modelů Raspberry Pi 
 \endinsert
 
-\midinsert \clabel[RPiB+]{Raspberry Pi v1 model B+}
-\picw=8cm \cinspic Raspberry_Pi_B+_top.png
-\caption/f Raspberry Pi verze 1 model B+
-\endinsert
- 
+
+ \label[sec_rt]
  \sec Linux a RT vylepšení
  
+ \label[sec_fpga] 
  \sec FPGA
  
  Text v sekci.\cite[AGL125] \cite[Libero_ug] \cite[rt-wiki]
