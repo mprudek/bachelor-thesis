@@ -277,18 +277,36 @@ Nevýhodou použitých SoC v obou verzích je chybějící integrovaná podpora 
  \label[sec_fpga] 
  \sec FPGA obvod 
  
-FPGA obvody (Field Programmable Gate Array - Programovatelná hradlová pole) jsou speciální číslicové integrované obvody obsahující různě složité programovatelné bloky, dále násobičky či různé druhy pamětí. Tyto bloky jsou propojené konfigurovatelnou maticí spojů. FPGA obvody se odlišují od obvodů typu ASIC možností přeprogramování - při změně požadavků lze jednoduše náhrát novou konfiguraci propojovací matice.
+FPGA obvody (Field Programmable Gate Array - Programovatelná hradlová pole) jsou speciální číslicové integrované obvody obsahující různě složité programovatelné bloky, dále násobičky či různé druhy pamětí. Tyto bloky jsou propojené konfigurovatelnou maticí spojů. FPGA obvody se odlišují od naprosté většiny integrovaných obvodů možností přeprogramování - při změně požadavků lze jednoduše náhrát novou konfiguraci propojovací matice.
 
-FPGA se v současnosti využívají v mnoha aplikacích. Využívají tak svých vlastností, mezi které patří poměrně snadný návrh v některém z HDL jazyků či grafických nástrojů. Flexibilita, neustále klesající cena ale i zmenšující se spotřeba elektrcké energie patří mezi další pozitiva. Běžnou oblastí použití je prototypování složitějších zařízení či tvorba periferií pro procesorové jednotky - tzv. \uv{Glue logic}. Složitější FPGA obvody je dokonce možné použít k implementaci procesoru.\cite[fpga_proc]  \cite[xilinx_fpga] \cite[bart_dis]
+FPGA se v současnosti využívají v mnoha aplikacích. Těží tak svých vlastností, mezi které patří poměrně snadný návrh v některém z HDL jazyků či grafických nástrojů. Flexibilita, neustále klesající cena ale i zmenšující se spotřeba elektrcké energie patří mezi další pozitiva. Běžnou oblastí použití je prototypování složitějších zařízení či tvorba periferií pro procesorové jednotky - tzv. \uv{Glue logic}. Složitější FPGA obvody je dokonce možné použít k implementaci procesoru.\cite[fpga_proc]  \cite[xilinx_fpga] \cite[bart_dis]
 
-Pro tuto práci byl vybrán FPGA obvod firmy Altera z rodiny IGLOO. Konkrétně čip AGL125 v pouzdře VQ100. Tato jednotka obsahuje 125 tisíc hradel a nabízí mimo jiné 36 kbits RAM. Podporuje In System Programming (\glref{ISP}) a lze naprogramovat prostřednictvím rozhraní \glref{JTAG}. \cite[AGL125] Pro synt \cite[Libero_ug] 
+Pro tuto práci byl vybrán FPGA obvod firmy Altera z rodiny IGLOO. Konkrétně čip AGL125 v pouzdře VQ100. Tato jednotka obsahuje 125 tisíc hradel a nabízí mimo jiné 36 kbits RAM. Podporuje In System Programming (\glref{ISP}) a lze naprogramovat prostřednictvím rozhraní \glref{JTAG} \cite[AGL125]. Obvod není při připojení napájení inicializován. Není tedy možné inicializovat jeho interní signály a proměnné na zvolené výchozí hodnoty. Výhodným řešením může být využití resetu z bloku fázového závěsu. Bez implementace tohoto mechanismu je ale třeba brát na zřetel hrozbu inicicializace na nevhodné hodnoty. Přikládem jsou signály pro ovládání polovičních H-můstků, které, při inicializaci na logickou jedničku mohou zapříčinit přehřátí a zničení motoru.  
+
+Návrh byl vytvořen v HDL jazyce VHDL. Jazyk VHLD slouží jak k popisu a následné syntéze obvodu v programovatelném hradlovém poli, tak k simulacím. Používá se také pro popis obvodů, které se podle návrhu ve VHDL později přímo vyrobí.  Standardizován byl v r. 1987. Jako jazyk vyvinutý z přísně typového jazyka Ada si pak ponechává některé jeho vlastnosti, které se s výhodou využijí při popisu hardware. Výhodou jazyka Ada, tedy i VHDL, je zabudovaná možnost souběžného výkonávání kódu. Tato funkce se totiž plně využije právě při navrhování hardware, kde je souběžné vykonávání elementární záležitostí. Vznikají tak bloky {\em Process}, které po příchodu spouštěcího signálu pracují zcela paralelně. 
+
+\sec Syntéza VHDL kódu a programování FPGA
+
+Pro syntézu kódu jsem použil balíček aplikací {\em Libero} viz. Manuál \cite[Libero_ug] vyvíjený společností {\em Microsemi Corporation} \fnote{Microsemi Corporation \url{http://www.microsemi.com/}}. Program je možné používat i zdrama. Jedinou podmínkou je registrace a získání \uv{FREE Licence}. Před každým spuštěním aplikace pak musí běžet licenční daemon. Jeho spouštěcí příkaz je následující:
+\begtt
+/opt/microsemi/licensing_daemon/lmgrd ...
+-c /opt/microsemi/license/license.dat ...
+-l /home/user/license.log
+\endtt
+
+Samotná syntéza se pak provede spuštěním skriptu "synthetize-agl.sh". Tento skript volá program "synplify_pro", který je součástí balíčku staženého s aplikací Libero. Všechny soubory VHDL, včetně nejvyšší entity, musí být uvedené v souboru "syn.tcl" a při syntéze musí být umístěné v spolu se skriptem v jednom adresáři.
+
+Pro naprogramování FPGA obvodu je využívána open-source aplikace  {\em UrJTAG} hostovaná na serveru {\em Sourceforge} \fnote{UrJTAG, Sourceforge.net \url{http://sourceforge.net/projects/urjtag/}}. Aplikace využívá knihovny "libusb" a "libftdi". Zvláště knihovna "libftdi" může být potenciálním zdrojem potíží, tím spíše, používáme-li 64bitový systém. Po zvládnutí počátečních potíží je možné FPGA obvod naprogramovat spuštěním skriptu "program-agl.sh" ze stejného adresáře, jako proběhla syntéza.
 
 \sec Výkonový hardware
 
-Samotný obvod je integrován do plošného spoje viz. Příloha \ref[priloha_motor]. Napájení o velikosti 3.3V je zajištěno z RPi, které konvertuje napětí 5V přivedené z měniče TEN 6-2411WIN \fnote{Traco Power DC/DC Converters \url{http://mediaserver.voxtechnologies.com/FileCache/Traco\%20Power-TEN\%206WIN\%20Series-datasheet1-1243850956.pdf}}. Bezstrátové řízení motoru pak zajišťuje trojice polovičních H-můstku řady LT1158 \fnote{Half Bridge N-Channel Power MOSFET Driver \url{http://cds.linear.com/docs/en/datasheet/1158fb.pdf}}. Tyto můstky jsou přitom od FPGA galvaniicky odděleny pomocí dvoukanálového číslicového izolátoru ADuM1200 \fnote{ Dual-Channel Digital Isolators \url{http://www.analog.com/media/en/technical-documentation/data-sheets/ADuM1200_1201.pdf}}. Pro vyčítání hodnot ze sensorů proudu je použit 12-bitový AD převodník ADS7841 \fnote{ADS7841 \url{http://www.ti.com/lit/ds/symlink/ads7841.pdf}}. Celý obvod může být napájen v poměrně velkém rozsahu napětí pohybujím se mezi 9V až 36V.
+Samotný obvod je integrován do plošného spoje viz. Příloha \ref[priloha_motor]. Napájení o velikosti 3.3V je zajištěno z RPi, které konvertuje napětí 5V přivedené z měniče TEN 6-2411WIN \fnote{Traco Power DC/DC Converters \url{http://mediaserver.voxtechnologies.com/FileCache/Traco\%20Power-TEN\%206WIN\%20Series-datasheet1-1243850956.pdf}}. Bezstrátové řízení motoru pak zajišťuje trojice polovičních H-můstku řady LT1158 \fnote{Half Bridge N-Channel Power MOSFET Driver \url{http://cds.linear.com/docs/en/datasheet/1158fb.pdf}}. Tyto můstky jsou přitom od FPGA galvaniicky odděleny pomocí dvoukanálového číslicového izolátoru ADuM1200 \fnote{ Dual-Channel Digital Isolators \url{http://www.analog.com/media/en/technical-documentation/data-sheets/ADuM1200_1201.pdf}}. Pro vyčítání hodnot ze sensorů proudu je použit 12-bitový AD převodník ADS7841 \fnote{ADS7841 \url{http://www.ti.com/lit/ds/symlink/ads7841.pdf}}. Celý obvod může být napájen v poměrně velkém rozsahu napětí pohybujím se mezi 9V až 36V. Mechanické propojení s Raspberry Pi je realizováno prostřednictvím plochého 26-žilového kabelu viz. Obrázek \ref[propojeni_obr]
 
 
-
+\midinsert \clabel[propojeni_obr]{Propojení Raspberry Pi s výkonovým HW}
+\picw=10cm \cinspic propojeni.png
+\caption/f Propojení Raspberry Pi s výkonovým HW
+\endinsert 
  
  
  
@@ -296,12 +314,19 @@ Samotný obvod je integrován do plošného spoje viz. Příloha \ref[priloha_mo
  
  \sec Komunikační protokol
  
- Výběr komunikačního protoku mezi RPi a FPGA obvodem se stal jednou z prvních otázek, které bylo třeba zodpovědět.
+ Výběr komunikačního protoku mezi RPi a FPGA obvodem se stal jednou z prvních otázek a bylo ji třeba zodpovědět již na začátku práce. 
  
- Existuje celá řada známých a hojně využívaných protokolů pro komunikaci ať již mezi periferiemi a procesorovou jednotkou či mezi procesory navzájem. Příkladem je $I^2C$, SSI, USART a jeho synchronní varianta SPI. 
+ Existuje celá řada známých a hojně využívaných protokolů pro komunikaci ať již mezi periferiemi a procesorovou jednotkou či mezi procesory navzájem. Příkladem je $I^2C$, SSI, USART a jeho synchronní varianta SPI. Požadavky přitom byly jasné. Komunikační protokol musí být dostatečně rychlý, aby při frekvenci minimálně 1kHz dokázal přenést alespoň 128bitů. A to oběma směry.
  
- Text v sekci.
+ Protokol $I^2C$ se zdál příliš složitý, vzhledem ke svým módům a zde zbytečné adresaci. Asynchronní verze protokolu USART nemá v tomto případě smysl, protože náš FPGA obvod nemá vnitří zdroj hodinového signálu. Jako příhodné varianty se jeví protokoly SSI a SPI. Výhodou SSI protokolu je, že jím generovaný hodinový signál, posílaný po samostatném vodiči, není zastaven s koncem komunikačního cyklu. Protokol SPI hodinový signál v této chvíli zastavuje a je tedy nutné do FPGA obvodu přivést hodinový signál zcela zvlášť. Tento signál je totiž nutný pro funkci všech synchronních komponent obvodu. Na rozdíl od protokolu SSI je ale SPI integrován (alespoň jeho master varianta) do jádra operačního systému Linux. Není tedy třeba tvořit vlastní ovladač.
  
+ \sec Čtení AD převodníků za senzory proudu
+
+
+\sec Generování PWM a dekódování IRC
+
+\sec Implementace požadavků RT patche v aplikaci 
+
  \chap Závěr
  
 
