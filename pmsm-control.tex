@@ -45,7 +45,7 @@ Komutace probíhá na rozdíl od kartáčových motorů elektronicky, což pří
  
  Základ konstrukce PMS Motoru je postaven na konstrukci 3-fázového indukčního (asynchronního) motoru.
  
- Statorem prochází vinutí jednotlivých fází. Počet vinutí pak závisí na počtu pólů permanentního magnetu umístěného ve statoru. Obvyklá varianta jsou dva páry pólů permanentního magnetu, viz Obrázek \ref[pole_pairs]. Celý návrh je přitom optimalizován pro buzení sinusovým průběhem, stejně tak zpětné  elktromotorické napětí vykazuje sinusový průběh. \cite[ijetae] \cite[ti_pmsm].
+ Statorem prochází vinutí jednotlivých fází. Počet vinutí pak závisí na počtu pólů permanentního magnetu umístěného ve statoru. Obvyklá varianta jsou dva páry pólů (polpáry) permanentního magnetu, viz Obrázek \ref[pole_pairs]. Celý návrh je přitom optimalizován pro buzení sinusovým průběhem, stejně tak zpětné  elktromotorické napětí vykazuje sinusový průběh. \cite[ijetae] \cite[ti_pmsm].
  
 \medskip \clabel[pole_pairs]{PMS Motor se dvěma pólovými dvojicemi}
 \picw=8cm \cinspic PMSM.png
@@ -167,6 +167,55 @@ $$
  
  \sec Použitý motor
  
+ Z široké nabídky bezkartáčových PMS motorů byl vybrán model BLWR233D-36V-4000 od společnosti Aneheim Automation \fnote{Aneheim Automation BLWR23 \url{http://www.anaheimautomation.com/products/brushless/brushless-motor-item.php?sID=148&pt=i&tID=96&cID=22}} viz. Obrázek \ref[motor_obr]. Jedná se o motor s výkonem 92W, pracující při maximálním napětí 36V. Vinutí statoru tvoří 6 polpárů, což znamená, že na každou fázi připadají právě dva. Analogicky má stator motoru právě dva polpáry, viz. Obrázek \ref[pole_pairs].
+ 
+\medskip \clabel[motor_obr]{Použitý motor}
+\picw=8cm \cinspic motor.png
+\caption/f Použitý motor 
+\medskip  
+ 
+  V motoru jsou integrovány Hallovy sondy, které snímají absolutní polohu motoru ve 12 úsecích mechanického plného kruhu. Při přechodu mezi dvěma úseky se mění práve jeden z výstupních signálů těchto senzorů. V místech přechodu je tedy možné určit pozici motoru velmi přesně.
+  
+   Do motoru je přivedeno celkem 8 vodičů ve dvou svazcích. Ve svazku o třech vodičích jsou přivedeny fáze, v ostatních je pak napájení a výstup hallových senzorů, viz. Tabulka \ref[Vodice_tab]. V Tabulce \ref[Motor_tab] jsou pak uvedeny technické parametry motoru.
+
+ \medskip \clabel[Motor_tab]{Parametry použitého motoru}
+\ctable{lll}{ 
+	\hfil Veličina & Uvedené hodnoty / jednotky & Metrický systém  \crl
+		Max. napětí & 36 V & 36 V  \cr
+		Max. výkon & 92 W & 92 W  \cr
+		Max. točivý moment & 31.2 oz-in & 0.0219 Nm  \cr
+		Max. otáčky & 4000 rpm & 4000 rpm   \cr
+		Torque constant & 8.5 oz-in/A & 0.06 Nm/A  \cr
+		BEMF konst. & 4.45 V/krpm  & 4.45 V/krpm   \cr
+		Odpor mezi fázemi (line-to-line)& 0.64 $\Omega$ & 0.64 $\Omega$   \cr
+		Vzájemná indukčnost fází & 2.1 mH & 2.1 mH    \cr
+		Moment setrvačnosti rotoru & 0.00106 oz-in-$sec^2$ & $7.485*10^{-6}$ kg$*m^2$  \cr
+		Délka & 2.9 in & 73.7 mm   \cr
+		Váha & 1.65 lbs & 0.75 kg  \cr	
+}
+\caption/t Parametry použitého motoru 
+\medskip
+
+ \medskip \clabel[Vodice_tab]{Vodiče přivedené do motoru}
+\ctable{lll}{ 
+	\hfil Svazek & Barva & Funkce  \crl
+		1 & Žlutá & Fáze A  \cr
+		1 & Červená & Fáze B  \cr
+		1 & Černá & Fáze C  \cr
+		2 & Červená & Napájení hallů  \cr
+		2 & Modrá & Hall senzor A  \cr
+		2 & Zelená & Hall senzor B  \cr
+		2 & Bílá & Hall senzor C  \cr
+		2 & Černá & Uzemění hallů  \cr
+}
+\caption/t Vodiče přivedené do motoru 
+\medskip 
+  
+  K motoru je též z jedné strany namontován inkrementální rotační čítač (dále jen \glref{IRC}), který měří relativní polohu polohu motoru vůči pozici při startu řízení. Jeho výhodou je vysoká přesnost.  Zatímco Hallovy sondy dokáží rozlišit jen mezi 12 polohami na jednu mechanickou otáčku, IRC rozezná 2000 samostatných bodů. K IRC vedou vodiče napájení a signálů s daty o poloze. Dva z nich jsou signály, které ze svých aktuálních stavů a jejich změn poskytují informaci o pohybu motoru a jeho směru. Třetí signál pak vyšle puls vždy jen v jedné pozici za jednu mechanickou otáčku motoru. Poskytuje tak absolutní polohu.
+  
+ 
+
+ 
  \label[sec_rpi]
  \sec Raspberry Pi
  
@@ -216,7 +265,7 @@ Nevýhodou použitých SoC v obou verzích je chybějící integrovaná podpora 
  
  Vzhledem k rozsáhlosti zdrojového kódu systému Linux není možné analyticky spočítat veškerá spoždění. Podobný výpočet by navíc nebyl možný při použití rozmanitých vyrovnávacích pamětí a víceprocesorových systémů. Pro mnoho aplikací je však dostačující znát průběhy zpoždění měřeného na zatíženém systému v delším časovém období - řádově v měsících. Těmito testy a také dalším vývojem RT vlastností Linuxu se zabývá laboratoř OSADL \fnote{OSADL \url{http://www.osadl.org/}}. 
  
- Jedna z posledních verzí RT-varianty jádra (3.18.7-rt2), tak po měsících testování reakcí na vnější události nevykázala byť jediné zpoždění přesahující 100$\mu$s. Přičemž testy probíhaly  na výkonném HW s architekturou x86. Pro některé další architektury, napřiklad ARM pak zpožnějí nepřesahuje 200$\mu$s. \cite[rychlost_odezvy].
+ Jedna z posledních verzí RT-varianty jádra (3.18.7-rt2), tak po měsících testování reakcí na vnější události nevykázala byť jediné zpoždění přesahující 100$\mu$s. Přičemž testy probíhaly  na výkonném HW s architekturou x86. Pro některé další architektury, napřiklad ARM pak zpožnějí pro vybrané modely nepřesahuje 200$\mu$s. \cite[rychlost_odezvy].
  
  \secc Aplikace RT patche
  
