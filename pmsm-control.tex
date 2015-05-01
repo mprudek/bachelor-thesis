@@ -30,11 +30,11 @@
  
  Pro komunikaci s FPGA obvodem bylo třeba vybrat jednoduchý komunikační protokol. Požadavkem byla možnost obousměrné komunikace a současně vzhledem k frekvenci řídicí smyčky a objemu přenesených dat dostatečná rychlost. Bylo také nutné, aby použitý protokol byl natolik nekomplikovaný, že půjde výhodně realizovat v FPGA obvodu a na straně druhé pohodlně zpracovat v jádře operačního systému na RPi. 
  
- Jak jsem již zmínil, překotný vývoj digitálních řidicích zařizení hlavně koncem druhé poloviny 20. století nábídl možnosti jejich využití i tam, kde to dříve nebylo možné. Přikladem nechť je vývoj synchronního bezkartáčového motoru s permanentním magnetem v rotoru (dále PMS motory či jen PMSM). Bez digitálního zpracování dat a PWM modulace by jeho provoz nebyl možný. Takový motor přitom nabízí ve srovnáním s konvenčním indukčním(asynchronním) motorem hned několik výhod. Nejdůležitějšími jsou plynulé řízení polohy, rychlosti a točivého momentu. Oproti kartáčovému DC motoru pak odpadá použití kartáčů, kolísání točivého momentu a zvvyšuje se efektivita. Více o PMS motorech uvedu v kapitole \ref[chap_pmsm].
+ Jak jsem již zmínil, překotný vývoj digitálních řidicích zařizení hlavně koncem druhé poloviny 20. století nábídl možnosti jejich využití i tam, kde to dříve nebylo možné. Dalším důležitým milníkem je i pokrok v bezstrátovém řízení výkonu a využití nových výkonových spínacích prvků. Přikladem nechť je vývoj synchronního bezkartáčového motoru s permanentním magnetem v rotoru (dále PMS motory či jen PMSM). Bez digitálního zpracování dat a PWM modulace by jeho provoz nebyl možný. Takový motor přitom nabízí ve srovnáním s konvenčním indukčním(asynchronním) motorem hned několik výhod. Nejdůležitějšími jsou plynulé řízení polohy, rychlosti a točivého momentu. Oproti kartáčovému DC motoru pak odpadá použití kartáčů, kolísání točivého momentu a zvvyšuje se efektivita. Více o PMS motorech uvedu v kapitole \ref[chap_pmsm].
 
  
  \label[chap_pmsm]
- \chap PMS motory.
+ \chap PMS motory
 
 PMS (Permanent Magnet Synchronous) motory jsou díky vysoké efektivitě a robustní kontrukci bez kartáčů vhodnou volbou v mnoha řídicích aplikacích\cite[ESD]. 
 
@@ -131,7 +131,7 @@ $$ \overline{i_{sg}}=\overline{i_s}e^{-j\theta_g} \eqmark$$
 
 \medskip \clabel[park]{Parkova transformace}
 \picw=8cm \cinspic StatorCurrents.png
-\caption/f Parkova transformace
+\caption/f Parkova transformace 
 \medskip 
 
 A pro soustavu spojenou s rotorem již můžeme dosadit:
@@ -205,12 +205,51 @@ Nevýhodou použitých SoC v obou verzích je chybějící integrovaná podpora 
  \label[sec_rt]
  \sec Linux a RT vylepšení
  
- \label[sec_fpga] 
- \sec FPGA
+ Linux je víceuživatelský, víceúhlový operační systém založený na stejnojmenném jádře, které vyvinul v roce 1991 Linus Thorvadls. S vylepšením zaručující maximální čas odezvy na vnější události se stává zajímavou volbou i pro některé řídicí aplikace.
  
- Text v sekci.\cite[AGL125] \cite[Libero_ug] \cite[rt-wiki]
+ Systém, který byl původně myšlen spíše jako koníček se postupem času vyvinul z pouhého emulátoru terminálu v jeden z nejpoužívanějších na světě. Dnes mají Linuxové distribuce 97\% zastoupení mezi největšími superpočítači \fnote{Linux dominates supercomputers \url{http://www.zdnet.com/article/linux-dominates-supercomputers-as-never-before}} a například systém Android, s Linuxovým jádrem, běží na 47\% všech smartphonů a tabletů \fnote{Mobile/Tablet Operating System Market Share \url{http://marketshare.hitslink.com/operating-system-market-share.aspx?qprid=8&qptimeframe=M&qpcustomd=1}}. Mohutný rozmach systému byl zapříčiněn mimo jiné zveřejněním jeho zdrojového kódu pod svobodnou licencí. To umožnilo na jeho vývoji pracovat tisícům dobrovolníků a mnoha korporacím, mezi které patří například Red Head, Intel, Samsung či Google \fnote{Who actually develops Linux? \url{http://www.extremetech.com/computing/175919-who-actually-develops-linux-the-answer-might-surprise-you}}.
+ 
+ 
+ Pro široké možnosti svého využití a jednoduché vzdálené správy si systém brzy získal oblibu mezi vyvojáři. Doménou řídicích aplikací však dále zůstavaly menší systémy. Linux se tak stával součástí jen větších celků, kde za odezvu k kritických částech byl zodpovědný \glref{RT} OS a Linux plnil spíše administrativní funkce. Vývoj plikací pro menší RT OS však přinaší mnoho komplikací navíc, přikladem je spíše minimalistické \glref{API} a často nedostatečná podpora některých komunikačních protokolů. Vznikl tak projekt, jehož cílem bylo upravit linuxové jadro způsobem, který umožní včasné přeplánování a zajistí tak splnění časových požadavků vyžadovaných řízením. 
+ 
+ Projekt KURT (Kansas University Real Time) se stal průkopníkem, když využil podporu Linuxu pro víceprocesorové systémy (\glref{SMP}) a rozšířil možnost souběhu procesů při zpracování systémových volání v jádře, což jádro dříve v plné míře nedovolovalo. Serializace takových úseků, ve kterých se v danou chvíli směl nacházet jen jeden procesor je pak řešena zámky s aktivním čekáním (spin-lock). Ostatní úseky kódu s nutností vyloučení vzájemného  souběhu namísto spin-locků začaly využívat RT-mutex. Další snaha byla minimalizovat či přepracovat části kódu, které neumnožňují preempci, jako například obslužné rutiny přerušení. Důležitá je implementace dědění priorit.  \cite[preemption] \cite[rychlost_odezvy] 
+ 
+ Vzhledem k rozsáhlosti zdrojového kódu systému Linux není možné analyticky spočítat veškerá spoždění. Podobný výpočet by navíc nebyl možný při použití rozmanitých vyrovnávacích pamětí a víceprocesorových systémů. Pro mnoho aplikací je však dostačující znát průběhy zpoždění měřeného na zatíženém systému v delším časovém období - řádově v měsících. Těmito testy a také dalším vývojem RT vlastností Linuxu se zabývá laboratoř OSADL \fnote{OSADL \url{http://www.osadl.org/}}. 
+ 
+ Jedna z posledních verzí RT-varianty jádra (3.18.7-rt2), tak po měsících testování reakcí na vnější události nevykázala byť jediné zpoždění přesahující 100$\mu$s. Přičemž testy probíhaly  na výkonném HW s architekturou x86. Pro některé další architektury, napřiklad ARM pak zpožnějí nepřesahuje 200$\mu$s. \cite[rychlost_odezvy].
+ 
+ \secc Aplikace RT patche
+ 
+ \cite[rt-wiki]
+
+ 
+ 
+  
+ \label[sec_fpga] 
+ \sec FPGA obvod 
+ 
+FPGA obvody (Field Programmable Gate Array - Programovatelná hradlová pole) jsou speciální číslicové integrované obvody obsahující různě složité programovatelné bloky, dále násobičky či různé druhy pamětí. Tyto bloky jsou propojené konfigurovatelnou maticí spojů. FPGA obvody se odlišují od obvodů typu ASIC možností přeprogramování - při změně požadavků lze jednoduše náhrát novou konfiguraci propojovací matice.
+
+FPGA se v současnosti využívají v mnoha aplikacích. Využívají tak svých vlastností, mezi které patří poměrně snadný návrh v některém z HDL jazyků či grafických nástrojů. Flexibilita, neustále klesající cena ale i zmenšující se spotřeba elektrcké energie patří mezi další pozitiva. Běžnou oblastí použití je prototypování složitějších zařízení či tvorba periferií pro procesorové jednotky - tzv. \uv{Glue logic}. Složitější FPGA obvody je dokonce možné použít k implementaci procesoru.\cite[fpga_proc]  \cite[xilinx_fpga] \cite[bart_dis]
+
+Pro tuto práci byl vybrán FPGA obvod firmy Altera z rodiny IGLOO. Konkrétně čip AGL125 v pouzdře VQ100. Tato jednotka obsahuje 125 tisíc hradel a nabízí mimo jiné 36 kbits RAM. Podporuje In System Programming (\glref{ISP}) a lze naprogramovat prostřednictvím rozhraní \glref{JTAG}. \cite[AGL125] Pro synt \cite[Libero_ug] 
+
+\sec Výkonový hardware
+
+Samotný obvod je integrován do plošného spoje viz. Příloha \ref[priloha_motor]. Napájení o velikosti 3.3V je zajištěno z RPi, které konvertuje napětí 5V přivedené z měniče TEN 6-2411WIN \fnote{Traco Power DC/DC Converters \url{http://mediaserver.voxtechnologies.com/FileCache/Traco\%20Power-TEN\%206WIN\%20Series-datasheet1-1243850956.pdf}}. Bezstrátové řízení motoru pak zajišťuje trojice polovičních H-můstku řady LT1158 \fnote{Half Bridge N-Channel Power MOSFET Driver \url{http://cds.linear.com/docs/en/datasheet/1158fb.pdf}}. Tyto můstky jsou přitom od FPGA galvaniicky odděleny pomocí dvoukanálového číslicového izolátoru ADuM1200 \fnote{ Dual-Channel Digital Isolators \url{http://www.analog.com/media/en/technical-documentation/data-sheets/ADuM1200_1201.pdf}}. Pro vyčítání hodnot ze sensorů proudu je použit 12-bitový AD převodník ADS7841 \fnote{ADS7841 \url{http://www.ti.com/lit/ds/symlink/ads7841.pdf}}. Celý obvod může být napájen v poměrně velkém rozsahu napětí pohybujím se mezi 9V až 36V.
+
+
+
+ 
+ 
  
  \chap Použité řešení
+ 
+ \sec Komunikační protokol
+ 
+ Výběr komunikačního protoku mezi RPi a FPGA obvodem se stal jednou z prvních otázek, které bylo třeba zodpovědět.
+ 
+ Existuje celá řada známých a hojně využívaných protokolů pro komunikaci ať již mezi periferiemi a procesorovou jednotkou či mezi procesory navzájem. Příkladem je $I^2C$, SSI, USART a jeho synchronní varianta SPI. 
  
  Text v sekci.
  
@@ -242,9 +281,19 @@ Na platformě procesorové desky Raspberry Pi implementujte systém pro řízen�
 
 \app Zkratky\par \makeglos %vlozi novou prilohu
 
+\label[priloha_motor]
+\app Dokumentace výkonového stupně Rpi-Mi-1, PiKRON 2014
 
 
- 
+\topinsert 
+\picw=16cm \cinspic 3p-motor-driver-1-sch.pdf
+\caption/f Schéma driveru motoru
+\endinsert 
+
+\topinsert 
+\picw=15.8cm \cinspic rpi-mi-1-sch.pdf
+\caption/f Schéma propojení RPi a FPGA obvodu
+\endinsert  
  
  \bye
   
