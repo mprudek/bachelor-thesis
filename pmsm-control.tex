@@ -271,9 +271,6 @@ Nevýhodou použitých SoC v obou verzích je chybějící integrovaná podpora 
  
  \cite[rt-wiki]
 
- 
- 
-  
  \label[sec_fpga] 
  \sec FPGA obvod 
  
@@ -312,20 +309,178 @@ Samotný obvod je integrován do plošného spoje viz. Příloha \ref[priloha_mo
  
  \chap Použité řešení
  
+ V předcházející kapitole jsem se věnoval použitému hardware a jeho specifikacím. Nyní popíši, jak probíhala práce samotná. 
+ 
+ V prvé řadě tedy výběr a implementace vhodného komunikačního protokolu, kterým se stal protokol SPI. Dále čtení a částečné zpracování dat z A-D převodníku, jenž je připojen na senzory snímající proud jednotlivými fázemi motoru. Budu hovořit také o požadavcích RT rozšíření Linuxu a operacím, které je nutné pro jeho správnou činnost provést. Tématem bude i generování PWM signálů a dekódování IRC. Nakonec popíši elektronickou komutaci.
+ 
  \sec Komunikační protokol
  
  Výběr komunikačního protoku mezi RPi a FPGA obvodem se stal jednou z prvních otázek a bylo ji třeba zodpovědět již na začátku práce. 
  
- Existuje celá řada známých a hojně využívaných protokolů pro komunikaci ať již mezi periferiemi a procesorovou jednotkou či mezi procesory navzájem. Příkladem je $I^2C$, SSI, USART a jeho synchronní varianta SPI. Požadavky přitom byly jasné. Komunikační protokol musí být dostatečně rychlý, aby při frekvenci minimálně 1kHz dokázal přenést alespoň 128bitů. A to oběma směry.
+ Existuje celá řada známých a hojně využívaných protokolů pro komunikaci ať již mezi periferiemi a procesorovou jednotkou či mezi procesory navzájem. Příkladem je $I^2C$, SSI, USART a jeho synchronní varianta SPI. Požadavky přitom byly jasné. Komunikační protokol musí být dostatečně rychlý, aby při frekvenci minimálně 1kHz dokázal přenést alespoň 128bitů. A to oběma směry. Je také nutné, aby byl dostatečně jednoduchý pro efektivní realizaci v FPGA obvodu.
  
- Protokol $I^2C$ se zdál příliš složitý, vzhledem ke svým módům a zde zbytečné adresaci. Asynchronní verze protokolu USART nemá v tomto případě smysl, protože náš FPGA obvod nemá vnitří zdroj hodinového signálu. Jako příhodné varianty se jeví protokoly SSI a SPI. Výhodou SSI protokolu je, že jím generovaný hodinový signál, posílaný po samostatném vodiči, není zastaven s koncem komunikačního cyklu. Protokol SPI hodinový signál v této chvíli zastavuje a je tedy nutné do FPGA obvodu přivést hodinový signál zcela zvlášť. Tento signál je totiž nutný pro funkci všech synchronních komponent obvodu. Na rozdíl od protokolu SSI je ale SPI integrován (alespoň jeho master varianta) do jádra operačního systému Linux. Není tedy třeba tvořit vlastní ovladač.
+ Protokol $I^2C$ se zdál příliš složitý, vzhledem ke svým módům a zde zbytečné adresaci. Asynchronní verze protokolu USART nemá v tomto případě smysl, protože náš FPGA obvod nemá vnitří zdroj hodinového signálu. Jako příhodné varianty se jeví protokoly SSI a SPI. Výhodou SSI protokolu je, že jím generovaný hodinový signál, posílaný po samostatném vodiči, není zastaven s koncem komunikačního cyklu. Protokol SPI hodinový signál v této chvíli zastavuje a je tedy nutné do FPGA obvodu přivést hodinový signál zcela zvlášť. Tento signál je totiž nutný pro funkci všech synchronních komponent obvodu. Na rozdíl od protokolu SSI je ale SPI integrován (alespoň jeho master varianta) do jádra operačního systému Linux. Není tedy třeba tvořit vlastní ovladač. Pro práci bel nakonec vybrán protokol SPI.
  
+\midinsert \clabel[spi_obr]{Propojení Raspberry Pi s výkonovým HW}
+\picw=10cm \cinspic SPI_single_slave.png
+\caption/f SPI s jedením uzlem typu slave (Zdroj:wikipedia.org)
+\endinsert 
+
+SPI je deterministický protokol využívající model komunikace \uv{master-slave}. Pro komunikaci mezi dvěma zařízeními jsou vyžadovány obvykle čtyři datové vodiče. "SCLK" přenaší hodinový signál, jehož zdrojem je master. "MOSI" (Master Out Slave In) je datová linka nesoucí sekvenci bitů směrem od mastera ke slave. "MISO" (Master In Slave Out) pak vede data opačný směrem. Čtvrtým vodičem je "SE" (Slave Enable, někdy značeno "SS" - Slave Select), obvykle řízený inverzní logikou (Active-Low), kterým master oznamuje slave, že spustí hodinový signál a dojde k výměně dat. V případě více uzlů slave vede do každého zvláštní vodič "SE", zatímco ostatní tři jsou společné. 
+
+Existují čtyři módy tohoto protokolu, které jsou jsou kombinací dvou bitů \cite[spidev_sum]. První bit, "CPOL" oznamuje, jaký je stav hodin (signálu "SCLK") na počátku komunikace - ve chvíli, kdy "SE" přejde do stavu "Low". Při "CPOL"=0 je počáteční stav "SCLK"=0 a prví hrana je tedy nástupná. Při "CPOL"=1 začínají hodiny ve stavu "High" a první hrana je sestupná. Druhý bit, "CPHA" indikuje, zda jsou data vzorkována či zapisována při náastupné nebo sestupné hraně. Při "CPHA"=0 jsou data vzorkována při nástupné hraně "SCLK" a zapisována při hraně sestupné. Pokud je "CPHA"=1, je tomu naopak. Platí přitom, že zápis dat, stejně jako jejich vzorkování, probíhá v obou zařízeních současně. Číslování módů shrnuje Tabulka \ref[spi_tab].
+
+
+ \medskip \clabel[spi_tab]{Módy protokolu SPI}
+\ctable{ccc}{ 
+	\hfil Mód & CPOL & CPHA  \crl
+		0 & 0 & 0  \cr
+		1 & 0 & 1  \cr
+		2 & 1 & 0  \cr
+		3 & 1 & 1  \cr
+}
+\caption/t Módy protokolu SPI 
+\medskip 
+
+Při použití módů 0 a 2, kdy "CPHA"=0 je nutné data připravit ještě před příchodem první hrany hodin. Ta, ať už je sestupná či nástupná, totiž data již vzorkuje. Data jsou tedy vystaveny s poklesem signálu "SE". Průběhy komunikace při jednotlivých kombinacích "CPOL" a "CPHA" ukazuje Obrázek \ref[spi_mods_obr]. 
+
+\midinsert \clabel[spi_mods_obr]{Průběh komunikace po SPI při různých módech}
+\picw=9cm \cinspic SPI_timing_diagram2.png
+\caption/f Průběh komunikace po SPI při různých módech (Zdroj:wikipedia.org)
+\endinsert 
+
+Protože jednotlivé módy jsou kvalitativně rovnocené, výběr jednoho z nich není nijak rozhodující. Přesto se dá říci, že mód 0 je asi nejpoužívanější, proto padla volba právě na něj. Dále v textu nebudu tuto problematiku více zmiňovat a budu předpokládat, že používáme právě mód 0. Šířka přenášeného slova pak byla zvolena na osm bitů.  
+
+ \secc SPI slave v FPGA obvodu
+ 
+ FPGA obvod musí být v tomto řešení uzlem typu slave. Uzel typu master je zdrojem hodinového signálu, který, jak známo, náš obvod sám vygenerovat neumí. Implementace je součástí souboru "rpi_pmsm_control.vhdl". 
+ 
+Komunikace je pak součástí jednoho Procesu v jazyce VHDL. Proces byl vytvořen jako synchronní, spínaný jen nástupnou hranou vnitřního hodinového signálu ("gpio_clk"). Spínání tohoto procesu signály "SCLK" a "SE" by nebylo výhodné a vyvořilo by v obvodu novou hodinovou doménu. Řešení by tak bylo náchylné na hazardy s tím spojené. Je tedy nutné signály "SE" a "SCLK" synchronně vzorkovat. V kódu Procesu se tak objeví následující část:
+
+\begtt
+	wait until (gpio_clk'event and gpio_clk='1');		
+		  --SCLK edge detection
+		  spiclk_old(0)<=spi_clk;
+	 	  spiclk_old(1)<=spiclk_old(0);
+			
+		  if (spiclk_old="01") then --rising edge, faze cteni
+		  ...				
+		  práce s daty		
+		  ...
+		  end if;
+\endtt
+ 
+ Protokol SPI je v FPGA obvodu obvykle implementován jako posuvný registr viz. Obrázek \ref[spi_trans_obr]. S aktivací signálu "SE", čili s jeho sestupnou hranou, jsou připraveny data do posuvného registru. Zároveň je třeba do vodiče "MISO" zapsat první bit přenosu. První příchozí hrana signálu "SCLK" je nástupná, tedy vzorkovací. Po jejím příchodu je posuvný registr posunut o jeden bit doleva a na uprázdněné místo je zapsán aktuální stav vodiče "MOSI".
+ 
+ \begtt
+ dat_reg(127 downto 0) <= dat_reg(126 downto 0) & spi_mosi;
+ \endtt
+ 
+ Po příchodu druhé hrany signálu "SCLK", tedy sestupné, je nutné vystavit do vodiče "MISO" nový bit.
+ 
+  \begtt
+ spi_miso <= dat_reg(127); 
+ \endtt
+ 
+\midinsert \clabel[spi_trans_obr]{Průběh komunikace po SPI při různých módech}
+\picw=9cm \cinspic SPI_8-bit_circular_transfer.png
+\caption/f Průběh komunikace po SPI při různých módech (Zdroj:wikipedia.org)
+\endinsert 
+
+Tento postup se opakuje až do deaktivace signálu "SE".
+ 
+ \secc SPI master na Raspberry Pi
+ 
+ SPI master je na Raspberry Pi implementován pomocí driveru "spidev.c", který je součástí jádra OS Linux.
+ 
+ V testovacím kódu je pak pužití tohoto driveru součástí souboru "rp_spi.c". V úvodu je třeba vložit hlavičku "#include <linux/spi/spidev.h>". Klíčovým prvkem je zde volání funkce "int ioctl(int d, int request, ...);" . Tato funkce slouží v Linuxu ke komunikaci se speciálními soubory (special files), jako například se zařízeními v adresáři "/dev/" . První argument, argument "d" je file descriptor. Ten je možné získat pomocí funkce "int open(const char *pathname, int flags);" , přičemž argumentem "pathname" je cesta k souboru. Argument "flags" určuje mód otevření. Příkaz tedy může vypadat:
+ \ttline+0
+ \begtt
+ int fd = open(device, O_RDWR);\endtt
+ 
+ Makro "O_RDWR" specifikuje otev5ení pro čtení i psaní.
+ 
+ Druhým argumentem funkce "int ioctl(int d, int request, ...);" je request kód. Jedná se o kód specifický pro každou operaci s daným zařízením zvlášť. Posledním argumentem je konečně pointer na úsek alokované paměti. Není nutné volit pointer nakonkrétní datový typ. Konvence však, tam, kde není uvedeno jinak, doporučuje volit "char * argp" \cite[ioctl_man].
+ 
+ Jako první je třeba nastavit mód SPI, to je provedeno s makrem "SPI_IOC_WR_MODE" následovně:
+  \begtt
+  unsigned char mode = 0;
+  int ret = ioctl(fd, SPI_IOC_WR_MODE, &mode);\endtt
+  
+ Dále délku slova, využijeme "SPI_IOC_WR_MODE":
+ \begtt
+ unsigned char bits = 8;
+ ret = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bits);\endtt
+  
+  Poslední část konfigurace vyžaduje nastavit frekvenci hodin "SCLK", použijeme makro "SPI_IOC_WR_MAX_SPEED_HZ". Frekvence je očekávána v jednotkách Hz.:
+  
+   \begtt
+ unsigned int speed = 500000;
+ ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);\endtt
+  
+  Nyní je zařizení SPI plně nakonfigurováno a může začít přenos dat. Ten je proveden z využitím struktury "spi_ioc_transfer":
+  \ttline+9 
+  \begtt
+  struct spi_ioc_transfer tr = 
+  {
+		.tx_buf = (unsigned long)tx,
+		.rx_buf = (unsigned long)rx,
+		.len = 16,
+		.delay_usecs = 0,
+		.speed_hz = speed,
+		.bits_per_word = bits,
+  };\endtt
+  , kde "tx" je pointer na odesílaná a "rx" na příjmaná data, jejichž délka musí odpovídat velikosti vyměněných dat: 
+ \ttline+7  
+  \begtt
+  unsigned char rx[16] = {0, };
+  unsigned char tx[16] = {0, };\endtt
+
+\secc Pořadí dat v přenosu
+ 
+  Prvním přenášeným bitem komunikace je bit s nejvyšší hodnotou (MSB), tedy bit "dat_reg(127)" na straně FPGA. Za předpokladu, že data pro přenos jsou v Raspberry uchovávána v poli charů a odpadnou tak problémy s endianitou (instrukce ARMv6 jsou defaultně little-endian \fnote{ARMv6 Support for mixed-endian data \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0301h/Cdfbbchb.html}}), bude prvním přenášeným bitem MS bit v "tx[0]". Funkce bitů v přenosech z Raspberry do FPGA a v opačném směru ukazují Tabulka \ref[data_order1_tab] a Tabulka \ref[data_order2_tab].
+  
+ \medskip \clabel[data_order1_tab]{Pořadí dat v přenosu}
+\ctable{cc}{ 
+	\hfil Bity & Funkce \crl
+		127 & Aktivace resetu AD převodníku \cr
+		126 .. 124 & Enable PWM1 .. PWM3 \cr
+		123 .. 121 & Shutdown můstku pro PWM1 .. PWM3 \cr
+		120 .. 67 & - \cr		
+		66 .. 56 & Šířka plnění PWM1 \cr
+		55 .. 45 & Šířka plnění PWM1 \cr
+		45 .. 42 & - \cr
+		42 .. 32 & Šířka plnění PWM1 \cr
+		31 .. 0 & - \cr
+}
+\caption/t Přenos z Raspberry Pi do FPGA obvodu 
+\medskip 
+
+ \medskip \clabel[data_order2_tab]{Pořadí dat v přenosu}
+\ctable{cc}{ 
+	\hfil Bity & Funkce \crl
+		127 & Aktivace resetu AD převodníku \cr
+		126 .. 124 & Enable PWM1 .. PWM3 \cr
+		123 .. 121 & Shutdown můstku pro PWM1 .. PWM3 \cr
+		120 .. 67 & - \cr		
+		66 .. 56 & Šířka plnění PWM1 \cr
+		55 .. 45 & Šířka plnění PWM1 \cr
+		45 .. 42 & - \cr
+		42 .. 32 & Šířka plnění PWM1 \cr
+		31 .. 0 & - \cr
+}
+\caption/t Přenos z FPGA obvodu do Raspberry Pi 
+\medskip 
+  
  \sec Čtení AD převodníků za senzory proudu
+
 
 
 \sec Generování PWM a dekódování IRC
 
 \sec Implementace požadavků RT patche v aplikaci 
+
+\sec Elektronická komutace
 
  \chap Závěr
  
