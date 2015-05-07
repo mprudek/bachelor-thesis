@@ -346,7 +346,7 @@ Pro měření proudu přímo jednotlivými fázemi motoru je použita sada senzo
  
  Z IRC je posíláno 32 bitů dat s informací o aktuální poloze motoru. Dále je posílána 12-bitová informace o vzdálenosti od indexu. Index je přesně určené místo v rozsahu otáčení, maximální hodnota této vzdálenosti tak může být 1999 bodů. Tři byty jsou rezervovány pro výstupy z Hallových sond. Následuje 3x16 bitů informace o změřených proudech. Celkem tak v tomto směru dojde při každém průchodu řídicí smyčkou k výměně 128 bitů dat.
  
- Ke výměně stejného objemu dat dojde z důvodu použitého komunikačního protokolu i v opačném směru. Z RPi do rozšiřující jednotky přichází tři 11-bitové informace o šířce plnění PWM. Součástí přenosu jsou ještě 3 bity odemykající poloviční H-můstky a 3 bity určené k jejich úplné deaktivaci. Poslední využitý bit pak při změně z logické 0 do 1 povoluje resetování AD převodníku. Celkem je v tomto směru komunikace využito jen 40 ze 128 bitů.
+ Ke výměně stejného objemu dat dojde z důvodu použitého komunikačního protokolu i v opačném směru. Z RPi do rozšiřující jednotky přichází tři 11-bitové informace o šířce plnění PWM. Tyto hodnoty jsou ale z důvodu snadnějšího použití zarovnány na 16 bitů. Jen dolních 11 z nich je ale využito. Součástí přenosu jsou ještě 3 bity odemykající poloviční H-můstky a 3 bity určené k jejich úplné deaktivaci. Poslední využitý bit pak při změně z logické 0 do 1 povoluje resetování AD převodníku. Celkem je v tomto směru komunikace využito jen 40 ze 128 bitů.
  
  
  \sec Komunikační protokol
@@ -482,33 +482,33 @@ Tento postup se opakuje až do deaktivace signálu "SE".
   Prvním přenášeným bitem komunikace je bit s nejvyšší hodnotou (MSB), tedy bit "dat_reg(127)" na straně FPGA. Za předpokladu, že data pro přenos jsou v Raspberry uchovávána v poli charů a odpadnou tak problémy s endianitou (instrukce ARMv6 jsou defaultně little-endian \fnote{ARMv6 Support for mixed-endian data \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0301h/Cdfbbchb.html}}), bude prvním přenášeným bitem MS bit v "tx[0]". Funkce bitů v přenosech z Raspberry do FPGA a v opačném směru ukazují Tabulka \ref[data_order1_tab] a Tabulka \ref[data_order2_tab].
   
  \medskip \clabel[data_order1_tab]{Pořadí dat v přenosu}
-\ctable{cc}{ 
-	\hfil Bity & Funkce \crl
-		127 & Aktivace resetu AD převodníku \cr
-		126 .. 124 & Enable PWM1 .. PWM3 \cr
-		123 .. 121 & Shutdown můstku pro PWM1 .. PWM3 \cr
-		120 .. 67 & - \cr		
-		66 .. 56 & Šířka plnění PWM1 \cr
-		55 .. 45 & Šířka plnění PWM1 \cr
-		45 .. 42 & - \cr
-		42 .. 32 & Šířka plnění PWM1 \cr
-		31 .. 0 & - \cr
+\ctable{ccc}{ 
+	\hfil Bity & Byte přenosu & Funkce \crl
+		127 & tx[0] &Aktivace resetu AD převodníku \cr
+		126 .. 124 & tx[0] & Enable PWM1 .. PWM3 \cr
+		123 .. 121 & tx[0] & Shutdown můstku pro PWM1 .. PWM3 \cr
+		120 .. 43 &  &- \cr		
+		42 .. 32 & tx[10] tx[11] & Šířka plnění PWM1 \cr
+		31 .. 27 & &- \cr
+		26 .. 16 & tx[12] tx[13] & Šířka plnění PWM1 \cr
+		15 .. 11 & &- \cr		
+		10 .. 0 & tx[14] tx[15] & Šířka plnění PWM1 \cr
 }
 \caption/t Přenos z Raspberry Pi do FPGA obvodu 
 \medskip 
 
  \medskip \clabel[data_order2_tab]{Pořadí dat v přenosu}
-\ctable{cc}{ 
-	\hfil Bity & Funkce \crl
-		127 & Aktivace resetu AD převodníku \cr
-		126 .. 124 & Enable PWM1 .. PWM3 \cr
-		123 .. 121 & Shutdown můstku pro PWM1 .. PWM3 \cr
-		120 .. 67 & - \cr		
-		66 .. 56 & Šířka plnění PWM1 \cr
-		55 .. 45 & Šířka plnění PWM1 \cr
-		45 .. 42 & - \cr
-		42 .. 32 & Šířka plnění PWM1 \cr
-		31 .. 0 & - \cr
+\ctable{ccc}{ 
+	\hfil Bity & Byte přenosu & Funkce \crl
+		127 ..96 & rx[0] .. rx[3] & IRC \cr
+		95 & rx[4] & Hall 1 \cr
+		94 & rx[4] & Hall 2 \cr
+		93 & rx[4] & Hall 3 \cr
+		92 .. 81 & rx[4] rx[5] & Pozice indexu\cr
+		80 .. 72 & rx[5] rx[6] & Počet sečtených proudů \cr
+		71 .. 48 & rx[7] .. rx[9] & Součet proudů, kanál 2 \cr
+		47 .. 24 & rx[10] .. rx[12] & Součet proudů, kanál 0 \cr
+		23 .. 0 & rx[13] .. rx[15] & Součet proudů, kanál 1 \cr
 }
 \caption/t Přenos z FPGA obvodu do Raspberry Pi 
 \medskip 
