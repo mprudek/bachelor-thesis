@@ -514,11 +514,11 @@ Tento postup se opakuje až do deaktivace signálu "SE".
 \medskip 
   
   \label[adc_sec]
- \sec Čtení AD převodníků za senzory proudu
+ \sec Čtení hodnot z AD převodníku 
  
 Znalost proudů tekoucích jednotlivými fázemi motoru je nutná k tzv. Sensorless řízení a je součástí i dalších výpočtů. 
 
-V plošném spoji výkonového stupně {\em 3P-MOTOR-DRIVER-1} je proto integrován čtyřkanálový, 12-bitový AD převodník ADS7841. Převodník může pracovat buď ve 12-bitovém nebo jen v 8-bitovém režimu \cite[adc_man]. 
+V plošném spoji výkonového stupně {\em 3P-MOTOR-DRIVER-1} je proto integrován čtyřkanálový, 12-bitový AD převodník ADS7841. Na vstup převodníku jsou připojeny senzory proudu protékajícího fázemi, které pracují na principu Hallova efektu. Převodník může pracovat buď ve 12-bitovém nebo jen v 8-bitovém režimu \cite[adc_man]. 
 
 Důležité je zvolit správnou hodinovou frekvenci, která je závislá na napájecím napětí viz sekce \ref[vyk_hw_sec]. Obvod je stejně, jako celé FPGA, napájen napětím 3.3V, které je přivedeno z RPi. Hodinová frekvence tak byla stanovena na hodnotu 2.08Mhz. Tato frekvence je vyvořena kombinací frekvenčních děliček implementovaných v komponentách "divider.vhdl" a "adc_reader.vhdl". V komponentě "dvider.vhdl" dochází k vydělení frekvence 50MHz dvanácti a vzniká tak frekvence o velikosti 4.17MHz. Tato frekvence je následně vydělena dvěma v komponentě "adc_reader.vhdl", o které je více napsáno níže. Aby nedošlo k vytvoření nové hodinové domény, je ke spouštění Procesu ve VHDL určen hlavní 50MHz hodinový signál. Tento signál pak pouze vzorkuje pomalejší 4.17Mhz hodiny. Podobné řešení je popsáno již v sekci \ref[spi_slave_sec].
 
@@ -565,22 +565,76 @@ Konfiguraci řídicího slova a adresy kanálů všech tří fází ukazují tab
 \caption/t Přenos z FPGA obvodu do Raspberry Pi 
 \medskip 
 
+\secc Sčítání více hodnot proudu
 
+Po první implementaci měření proudů bylo patrné, že nedochází k ustálení hodnot přibližně na posledních 3 bitech. Částečným zpřesněním může být použití výběrového průměru namísto jen jedné změřené hodnoty.
+
+ K vyčtení hodnoty z AD převodníku dochází vzhledem k ferekvenci řídicí smyčky poměrně rychle. Při 15 hodinových cyklech nutných pro jednu konverzi a hodinové frekvenci 2.08Mhz, může dojít až ke 138 převodům. Na každou měřenou fázi to dělá zhruba 46 odečtených hodnot. Byla provedena následující úvaha:
+
+Změřenou hodnotu proudu procházejícího jednou z fází za neměnných podmínek označme jako náhodnou veličinu $X$. Za předpokladu, že tato náhodná veličina má normální rozložení pravděpodobnosti, platí, že skutečná hodnota proudu je rovna její střední hodnotě. Tedy $i_s=EX$.
+
+Realizujme tedy náhodný výběr z této veličiny a spočtěme jeho výběrový průměr. Pro výběrový průměr náhodné veličiny platí následující vztahy\cite[navara]:
+
+Výběrový průměr z náhodného výběru ${\bf{X}}=(X_1,...,X_n)$ je
+
+$$\overline{\bf{X}}={{1}\over{n}}\sum\limits_{j=1}^n X_j \eqmark$$
+
+Potom platí, že střední hodnota výběrového průměru se rovná střední hodnotě náhodné veličiny $X$.
+
+$$ E\overline{\bf{X}}=EX \eqmark $$
+
+Pro jeho směrodatnou odchylku $\sigma_{\overline{\bf{x}}_n}$ pak platí:
+
+$$\sigma_{\overline{\bf{x}}_n}={{1}\over{\sqrt{n}}}\sigma_x \eqmark$$
+
+Za předpokladu, že $n=46$ tedy platí, že $\sigma_{\overline{\bf{x}}_{46}}\approx{{1}\over{6.8}}\sigma_x$. Směrodatná odchylka výběrového průměru se oproti odečtení samostatných měření zmenšila 6.8x. A protože $\log_n 6.8\approx2.7$, můžeme říci, že jsem získali téměř tři bity informace navíc.
 
 \sec Generování PWM
 
 O generování signálů PWM se stará komponenta "mcpwm". Návrh implementuje 12-bitovou PWM. Základní myšlenkou je srovnání signálních vektorů "count" a "match". "count" je výstup z 12-bitového čítače, který je spouštěný hlavním 50MHz hodinovým signálem. "match" je pak odesílnáno ve finální podobě již z Raspberry Pi. Frekvence PWM je tedy $50000/2^{11}\approx 24.4$kHz.
 
-Na začátku cyklu, který je detekován při přetečením counteru signálem "sync", je tedy výstup PWM nastaven na 1. Zároveň je kontrolována podmínka "match=count", při jejím splnění dojde nastavení výstupu PWM na 0.
+Na začátku cyklu, který je detekován při přetečením counteru signálem "sync", je tedy výstup PWM nastaven na 1. Zároveň je kontrolována podmínka "match=count", při jejím splnění dojde nastavení výstupu PWM na 0. Jeden hodinový cyklus před nastavením signálu "sync" na hodnotu 1, je prováděna kontrola, zda je k dispozici nová hodnota signálu "match". V takovém případě je v dalším cyklu PWM používána již aktualizovaná hodnota. 
 
-Protože potřebujeme generovat tři signály PWM, je nutné tyto bloky vytvořit práě tři. Counter je však vyvořen jen jeden a je všemi bloky sdílen.  
+Protože potřebujeme generovat tři signály PWM, je nutné tyto bloky vytvořit právě tři. Counter je však vyvořen jen jeden a je všemi bloky sdílen.  
 
 
 \sec Dekódování IRC
 
+Dekódování výstupů IRC senzoru je realizováno v komponentě "qcounter.vhdl". 
+
+Vstupem komponenty jsou signály "irc_A" a "irc_B". Podle pořadí, v jakém dochází ke změnám těchto dvou signálů,je možné odvodit, v jakém směru se motor otáčí.
+
+Signály "irc_A" a "irc_B" jsou nejprve synchronně vzorkovány DFF obvodem spouštěným hlavní hodinovou frekvencí "gpio_clk". Aby došlo ke ztrátě informace o poloze, muselo by tak dojít ke dvěma změnám jednoho signálu během jednoho hodinového cyklu. Motor by se tedy musel za tuto dobu pootočit o tři body IRC. To by při frekvenci "gpio_clk" 50MHz znamenalo frekvenci otáčení  nejméně 75KHz, tedy 4500 tisíc otáček za minutu, což se nepředpokládá.
+
+Nejmenší dva bity výsledné pozice jsou pak vytořeny čistě kombinačně z navzorkovaných "irc_A" a "irc_B":
+  \ttline-1   
+  \begtt
+  qcount(0) <= a xor b;
+  qcount(1) <= b;\endtt
+ 
+Přechod do vyššího řádu je pak řešen pomocí 30-bitového čítače "count":
+\begtt
+	if (a_prev = '0') and (b_prev = '1') and (a = '0') and (b = '0') then 
+			count <= count_prev + 1;
+		elsif (a_prev = '0') and (b_prev = '0') and (a = '0') and (b = '1') then 
+			count <= count_prev - 1;
+		else
+			count <= count_prev;
+		end if;\endtt
+Veličiny s příponou "_prev" jsou pak veličiny zpožděné o jeden hodinový cyklus oproti těm bez přípony. Čítač je nakonec do výstupu komponenty promítnut následovně:
+\begtt
+  qcount(31 downto 2) <= count;\endtt
+
+
 \sec Implementace požadavků RT patche v aplikaci 
 
+\secc RT thread
+
 \sec Elektronická komutace
+
+\secc Komutace s využitím pouze Hallových sond
+
+\secc Komutace pomocí přičítání 120 stupňů
 
  \chap Závěr
  
