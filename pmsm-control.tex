@@ -67,9 +67,9 @@ Na rozdíl od kartáčových motorů je komutace PMS motorů řízena elektronic
  
  Toto může být vyjádřeno jako vektor v komplexní rovině, potom:
  
- $$ \overline{i} = i_{sa}+ai_{sb}+a^2i_{sc} \eqmark$$
- kde $a$ a $a^2$ jsou operátory posouvajíci fázi o 120°, $ a=e^{{2j\pi}/{3}} $ a $a^2=e^{{4j\pi}/{3}}$.
- $k$ je transformační konstanta.
+ $$ \overline{i} = i_{sa}+\hat{a}i_{sb}+\hat{a}^2i_{sc} \eqmark$$
+ kde $\hat{a}$ a $\hat{a}^2$ jsou operátory posouvajíci fázi o $120^{\circ}$, $ \hat{a}=e^{{2j\pi}/{3}} $ a $\hat{a}^2=e^{{4j\pi}/{3}}$.
+
  
  $\overline{i}$ můžeme vyjádřit jako součet jeho reálné a imaginární složky:
 
@@ -332,6 +332,7 @@ Pro měření proudu přímo jednotlivými fázemi motoru je použita sada senzo
  
  První sekce se zabývá výběrem a implementací vhodného komunikačního protokolu, který slouží k propojení rozšiřující jednotky s nadřazeným hardware. Další část se věnuje čtení a částečnému zpracování dat z A-D převodníku. Ten je připojen k senzorům snímajícím proud jednotlivými fázemi motoru. Budu hovořit také o požadavcích RT rozšíření Linuxu a operacím, které je nutné pro jeho správnou činnost provést. Tématem bude i generování PWM signálů a dekódování IRC. Nakonec popíši elektronickou komutaci.
  
+ \label[ctr_loop_freq]
  \sec Frekvence řídicí smyčky
  
  Ve chvíli, kdy přejdeme od spojitého řízení k diskrétnímu, je nutné se zabývat frekvencí řídicí smyčky. Řídici smyčka je proces, při kterém dochází k periodickému vzorkování hodnot nutných pro řízení a následnému nastavení velikosti akčního zásahu. Její frekvence je tak závislá na časových konstantách řízeného systému, či zjednodušeně, jen na té dominantní. V případě elektrických motorů je přitom dominantní časovou konstantou ta mechanická.
@@ -520,10 +521,10 @@ Znalost proudů tekoucích jednotlivými fázemi motoru je nutná k tzv. Sensorl
 
 V plošném spoji výkonového stupně {\em 3P-MOTOR-DRIVER-1} je proto integrován čtyřkanálový, 12-bitový AD převodník ADS7841. Na vstup převodníku jsou připojeny senzory proudu protékajícího fázemi, které pracují na principu Hallova efektu. Převodník může pracovat buď ve 12-bitovém nebo jen v 8-bitovém režimu \cite[adc_man]. 
 
-Důležité je zvolit správnou hodinovou frekvenci, která je závislá na napájecím napětí viz sekce \ref[vyk_hw_sec]. Obvod je stejně, jako celé FPGA, napájen napětím 3.3V, které je přivedeno z RPi. Hodinová frekvence tak byla stanovena na hodnotu 2.08Mhz. Tato frekvence je vyvořena kombinací frekvenčních děliček implementovaných v komponentách "divider.vhdl" a "adc_reader.vhdl". V komponentě "dvider.vhdl" dochází k vydělení frekvence 50MHz dvanácti a vzniká tak frekvence o velikosti 4.17MHz. Tato frekvence je následně vydělena dvěma v komponentě "adc_reader.vhdl", o které je více napsáno níže. Aby nedošlo k vytvoření nové hodinové domény, je ke spouštění Procesu ve VHDL určen hlavní 50MHz hodinový signál. Tento signál pak pouze vzorkuje pomalejší 4.17Mhz hodiny. Podobné řešení je popsáno již v sekci \ref[spi_slave_sec].
+Důležité je zvolit správnou hodinovou frekvenci, která bude přivedena hodinový vstup převodníku. Ta je závislá na napájecím napětí viz sekce \ref[vyk_hw_sec]. Obvod je stejně, jako celé FPGA, napájen napětím 3.3V, které je přivedeno z RPi. Hodinová frekvence tak byla stanovena na hodnotu 2.08Mhz. Tato frekvence je vyvořena kombinací frekvenčních děliček implementovaných v komponentách "divider.vhdl" a "adc_reader.vhdl". V komponentě "dvider.vhdl" dochází k vydělení frekvence 50MHz dvanácti a vzniká tak frekvence o velikosti 4.17MHz. Tato frekvence je následně vydělena dvěma v komponentě "adc_reader.vhdl", o které je více napsáno níže. Aby v rámci komponenty "adc_reader" nedošlo k vytvoření nové hodinové domény, je ke spouštění Procesu ve VHDL určen hlavní 50MHz hodinový signál. Tento signál pak pouze vzorkuje pomalejší 4.17Mhz hodiny. Podobné řešení je popsáno již v sekci \ref[spi_slave_sec].
 
-AD převodník je schopen pracovat v několika módech, které se liší počtem hodinových cyklů nutných k jednomu převodu. V základním módu je třeba 24 hodinových pulzů na konverzi. Tento mód předpokládá komunikace se zařízením vyžadujícím komunikaci po SPI protokolu s pevnou délku slova 8 bitů. Je určený především pro nepravidelné odečítání většinou z mikrokontroléru. Pokud je třeba odečítat hodnoty pravidelně a co nejrychleji, je k dispozici 16-pulzový převod.
-Máme-li ale možnost použít FPGA obvod, nemusíme se omezovat 8-bitovou šířkou slova a můžeme využít nejrychlejší variantu. Tedy konverzi dokončenou za 15 hodinových pulzů. V našem případě byla zvolena právě tahle varinta. Průběh takového převodu ukazuje Obrázek \ref[15clkconv_obr].
+AD převodník je schopen pracovat v několika módech, které se liší počtem hodinových cyklů nutných k jednomu převodu. V základním módu je třeba 24 hodinových pulzů na jednu konverzi. Tento mód předpokládá komunikaci se zařízením vyžadujícím p5enos dat po SPI protokolu s pevnou délku slova 8 bitů. Je určený především pro nepravidelné odečítání většinou z mikrokontroléru. Pokud je třeba odečítat hodnoty pravidelně a co nejrychleji, je k dispozici 16-pulzový převod.
+Máme-li ale možnost použít FPGA obvod, nemusíme se omezovat 8-bitovou šířkou slova a můžeme využít nejrychlejší variantu. Tedy konverzi dokončenou za 15 hodinových pulzů. V našem případě byla zvolena právě tahle varinta. Průběh 15-cyklového převodu z hlediska datového přenosu ukazuje Obrázek \ref[15clkconv_obr].
 
 \medskip \clabel[15clkconv_obr]{Průbeh konverze v režimu 15 hodinových pulzůp na převod}
 \picw=13cm \cinspic 15clkconv.png
@@ -587,15 +588,29 @@ Pro jeho směrodatnou odchylku $\sigma_{\overline{\bf{x}}_n}$ pak platí:
 
 $$\sigma_{\overline{\bf{x}}_n}={{1}\over{\sqrt{n}}}\sigma_x \eqmark$$
 
-Za předpokladu, že $n=46$ tedy platí, že $\sigma_{\overline{\bf{x}}_{46}}\approx{{1}\over{6.8}}\sigma_x$. Směrodatná odchylka výběrového průměru se oproti odečtení samostatných měření zmenšila 6.8x. A protože $\log_n 6.8\approx2.7$, můžeme říci, že jsem získali téměř tři bity informace navíc.
+Za předpokladu, že $n=46$ tedy platí, že $\sigma_{\overline{\bf{x}}_{46}}\approx{{1}\over{6.8}}\sigma_x$. Směrodatná odchylka výběrového průměru se oproti odečtení samostatných měření zmenšila 6.8x. A protože $\log_n 6.8\approx2.7$, je možno říci, že jsme získali téměř tři bity informace navíc.
 
 \sec Generování PWM
 
-O generování signálů PWM se stará komponenta "mcpwm". Návrh implementuje 12-bitovou PWM. Základní myšlenkou je srovnání signálních vektorů "count" a "match". "count" je výstup z 12-bitového čítače, který je spouštěný hlavním 50MHz hodinovým signálem. "match" je pak odesílnáno ve finální podobě již z Raspberry Pi. Frekvence PWM je tedy $50000/2^{11}\approx 24.4$kHz.
+Generováním signálů PWM se zabývá komponenta "mcpwm". Její návrh implementuje 11-bitovou PWM. Základní myšlenkou je srovnání signálních vektorů "count" a "match_reg". "count" je výstup z 11-bitového čítače, který je spouštěný hlavním 50MHz hodinovým signálem. "match" je pak odesílnáno ve finální podobě již z Raspberry Pi. Frekvence PWM je tedy $50000/2^{11}\approx 24.4$kHz.
 
-Na začátku cyklu, který je detekován při přetečením counteru signálem "sync", je tedy výstup PWM nastaven na 1. Zároveň je kontrolována podmínka "match=count", při jejím splnění dojde nastavení výstupu PWM na 0. Jeden hodinový cyklus před nastavením signálu "sync" na hodnotu 1, je prováděna kontrola, zda je k dispozici nová hodnota signálu "match". V takovém případě je v dalším cyklu PWM používána již aktualizovaná hodnota. 
+Na začátku cyklu, který je detekován při přetečení čítače, je nastaven po dobu jednoho hidinového cyklu signál "sync" na logickou 1. V té chvíli je výstup PWM nastaven na "next_q<='1'". Zároveň je kontrolována podmínka "match=count", při jejím splnění dojde nastavení výstupu PWM na 0.
+\ttline-1
+\begtt
+process (sync, count, match_reg, q)  
+begin
+  if count = match_reg then 
+    next_q <= '0';
+  elsif sync = '1' then 			
+    next_q <= '1';
+  else
+    next_q <= q;
+  end if;
+end process;\endtt
+  
+   Jeden hodinový cyklus před nastavením signálu "sync" na hodnotu 1, je prováděna kontrola, zda je k dispozici nová hodnota signálu "match". V takovém případě je v dalším cyklu PWM používána již aktualizovaná hodnota "match_reg<=match". 
 
-Protože potřebujeme generovat tři signály PWM, je nutné tyto bloky vytvořit právě tři. Counter je však vyvořen jen jeden a je všemi bloky sdílen.  
+Protože potřebujeme generovat tři signály PWM, je nutné bloky "mcpwm" vytvořit právě tři. Čítač je však vyvořen jen jeden a všemi bloky je sdílen.  
 
 
 \sec Dekódování IRC
@@ -609,26 +624,117 @@ Signály "irc_A" a "irc_B" jsou nejprve synchronně vzorkovány DFF obvodem spou
 Nejmenší dva bity výsledné pozice jsou pak vytořeny čistě kombinačně z navzorkovaných "irc_A" a "irc_B":
   \ttline-1   
   \begtt
-  qcount(0) <= a xor b;
-  qcount(1) <= b;\endtt
+	qcount(0) <= a xor b;
+	qcount(1) <= b;\endtt
  
 Přechod do vyššího řádu je pak řešen pomocí 30-bitového čítače "count":
 \begtt
 	if (a_prev = '0') and (b_prev = '1') and (a = '0') and (b = '0') then 
-			count <= count_prev + 1;
-		elsif (a_prev = '0') and (b_prev = '0') and (a = '0') and (b = '1') then 
-			count <= count_prev - 1;
-		else
-			count <= count_prev;
-		end if;\endtt
+		  count <= count_prev + 1;
+	elsif (a_prev = '0') and (b_prev = '0') and (a = '0') and (b ='1') then 
+		  count <= count_prev - 1;
+	else
+		  count <= count_prev;
+	end if;\endtt
 Veličiny s příponou "_prev" jsou pak veličiny zpožděné o jeden hodinový cyklus oproti těm bez přípony. Čítač je nakonec do výstupu komponenty promítnut následovně:
 \begtt
   qcount(31 downto 2) <= count;\endtt
 
 
-\sec Implementace požadavků RT patche v aplikaci 
+\sec Implementace požadavků RT rozšíření v uživatelském kódu 
 
-\secc RT thread
+Aby bylo možné plně využívat možností, které nabízí RT-rozšíření jádra Linux, je nutné v uživatelském kódu dodržovat některá základní pravidla. K těmto pravidlům patří například použití RT plánovací strategie nebo správné nastavení priorit vláken v rámci plánovače \cite[rt-wiki]. Implementaci těchto požadavků se věnuje právě tato sekce.
+
+\secc Nasatvení priority a plánovací strategie
+
+Plánovač v RT aplikacích může využívat více strategií. Ten, který je k dispozici v rámci RT rošíření jádra Linux využívá plánování s pevnými prioritami. Pokud je připraveno k běhu vlákno s vyšší prioritou, než má vlákno právě běžicí, je běžící vlákno neprodleně přeplánováno.
+
+Priority vláken je možné explicitně stanovit v uživatelském kódu. Rozsah jejich hodnot se pohybuje mezi 99 a 50 pro procesy jádra a mezi 49 až 1 pro uživatelské aplikace. Platí, že čím vyšší hodnota, tím vyšší priorita. 
+
+V rámci prioritního plánování je ještě nutné stanovit, k jakému chování dojde, budou-li k běhu připravena dvě vlákna se stejnou prioritou. K tomuto účelu slouží výběr mezi dvěma variantami: 
+
+
+\begitems 
+
+* "SCHED_FIFO": Pokud je vákno plánováno v tomto módu a stane se připraveným k běhu, je okamžitě pozastaveno vykonávání všech vláken s jiným než RT plánovačem. V případě, že právě beží jiné "SCHED_FIFO" vlákno, je nové vlákno zařazeno na konec fronty čekajících na přidělení procesorového času. Ve chvíli, kdy je novému vláknu procesor přidělen, není mu odejmut, dokud není zablokováno či ukončeno. 
+
+* "SCHED_RR": Sdílí všechny vlastnosti "SCHED_FIFO". Běžící vlákno je ale přeplánováno vždy po uplynutí pevně stanoveného časového kvanta. Respektive je zařazeno na konec fronty čekajících na přidělení procesorového času.
+\enditems
+
+Tato pravidla se týkají pouze vláken se stejnou prioritou. V případě, že jsou k běhu připravena dvě nebo více vláken s rozdílnou prioritou, není na ně brán zřetel \cite[sch_man].
+
+Pro nastavení priority a plánovací strategie v rámci vlákna slouží systémové volání: "int sched_setscheduler(pid_t pid, int p, const struct sched_param *s);". Její použití je následující:
+
+\begtt
+struct sched_param param;
+param.sched_priority = PRIORITY;
+if(sched_setscheduler(0, SCHED_FIFO, &param) == -1) {
+     perror("sched_setscheduler failed");
+     exit(-1);
+}\endtt
+
+Pro nastavení priority a plánovače vlákna, které teprve bude vytvořeno je nutné nejprve povolit nastavení plánovače prostřednicvím atributu, který je předáván při tvorbě vlákna (dále jen \uv{atribut}). Poté je třeba nastavit prioritu a plánovací strategii. Nakonec je vyvořeno i samotné vlákno. Celý proces je uveden níže: (Pro zvýšení přehlednosti zde byla odstraněna detekce chybových stavů)
+\begtt
+	pthread_attr_t attr; 	       /*atribut předávaný při tvorbě vlákna*/
+	struct sched_param schparam;	/*struktura pro nastavení priority*/
+
+	pthread_attr_init(&attr);    /*inicializace atributu*/
+	
+	/*povolení nastavení planovací strategie prostřednictvím atributu*/
+	(pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED); 
+	
+	pthread_attr_setschedpolicy(&attr, SCHED_FIFO); /*nastaveni planovace*/ 
+	
+	schparam.sched_priority = PRIORITY;             /*nastaveni priority*/
+
+	/*ulozeni priority podle hodnoty 'schparam' do atributu*/
+	pthread_attr_setschedparam(&attr, &schparam); 
+	
+	pthread_create(thread, &attr, start_routine, arg); /*vytvori vlakno*/
+
+	/*uvolneni struktury, nema vliv na vlakna jiz vytvorena*/
+	pthread_attr_destroy(&attr); \endtt
+	
+\secc Řídicí smyčka
+
+Frekvence řídicí smyčky byla stanovena v sekci \ref[ctr_loop_freq]. Nyní je třeba zajistit, aby byla tato frekvence skutečně dodržena.
+
+Pro periodického vykonávání kódu o stanovené frekvenci je možné využít cyklu "while", v jehož těle je volána funkce realizující čekání. Nejjednodušší variantou takové funkce jsou knihovní volání "unsigned int sleep(unsigned int seconds)" a "int usleep(useconds_t usec)". Tato volání však neberou v úvahu čas, po který je vykonávána samotná periodická činnost. Prodleva, která jimi vyvolána se také může prodlužovat v závislossti na zatížení systému nebo na délce vykonávání samotného volání \cite[usleep_man].
+
+Je tedy nutné použít \uv{čekací} funkci s přesně definovaným chováním. To je funkce "int clock_nanosleep(...)". Její použití je následující:
+\begtt      
+  struct timespec t;
+        struct sched_param param;
+        int interval = 50000; /* 50us*/
+
+
+      clock_gettime(CLOCK_MONOTONIC ,&t);
+        /* start after one second */
+        t.tv_sec++;
+
+        while(1) {
+                /* wait until next shot */
+                clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &t, NULL);
+
+                /* do the stuff */
+
+                /* calculate next shot */
+                t.tv_nsec += interval;
+
+                while (t.tv_nsec >= NSEC_PER_SEC) {
+                       t.tv_nsec -= NSEC_PER_SEC;
+                        t.tv_sec++;
+                }
+   }
+
+\endtt
+
+
+
+
+ 
+
+
 
 \sec Elektronická komutace
 
@@ -638,10 +744,6 @@ Veličiny s příponou "_prev" jsou pak veličiny zpožděné o jeden hodinový 
 
  \chap Závěr
  
-
- 
-
-
 
  \bibchap
  \usebib/c (simple) mybase
