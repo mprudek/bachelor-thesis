@@ -11,6 +11,7 @@
  \abstractCZ {Testovani}
  \declaration {Prohlasuji, ze jsem pracoval poctive.}
  \makefront
+
  
  \def\frac#1#2{{\begingroup#1\endgroup\over#2}} %/frac je LaTex, definujme vlastni
 
@@ -61,6 +62,10 @@ Na rozdíl od kartáčových motorů je komutace PMS motorů řízena elektronic
 
  \sec Matematický popis
  
+ Pro matematický popis dějů v PMS motorech az vláště pak pro \uv{Sensorless} řízení jsou vhodným nástrojem Clarkova a parkova tranformace. Jejich použití je uvedeno v této sekci.
+ 
+ \secc Clarkova transformace
+ 
  Uvažujme $i_{sa}$, $i_{sb}$ a $i_{sc}$ proudy procházející vinutím statoru, platí:
  
  $$ i_{sa} + i_{sb} + i_{sc} =0\eqmark $$
@@ -77,7 +82,7 @@ Na rozdíl od kartáčových motorů je komutace PMS motorů řízena elektronic
  
 \medskip \clabel[proudy]{Komplexní vyjádření vektoru proudu vinutím statoru}
 \picw=6cm \cinspic currents.pdf
-\caption/f Komplexní vyjádření vektoru proudu vinutím statoru. $\alpha$ značí reálnou osu a $\beta$ značí imaginární osu.
+\caption/f Komplexní vyjádření vektoru proudu vinutím statoru (Clarkova transformace). $\alpha$ značí reálnou osu a $\beta$ značí imaginární osu.
 \medskip %obrazek zustal tam, kde ma. \midinsert ho posunul
 
 Se znalostí proudů, protékajících jednotlivými fázemi, pak můžeme vypočítat myšlené proudy tekoucí rovnoběžně s imaginární a reálnou osou.
@@ -124,10 +129,11 @@ $$
 Rovnice \ref[rce1] az \ref[rce2] představují model PMS motoru v souřadné soustavě ($\alpha, \beta$) spojené se statorem.
 
 
-Kromě soustavy spojené se statorem bývá někdy výhodné vyjádřit tyto večiny v soustavě spojené s rotorem.
-Pro dosažení maximálních momentových účinků, je totiž výhodné, aby vektor megnetické indukce, magnetického pole vyvolávaného proudy protékající vinutím statoru, svíral pravý úhel s vektorem mg. indukce mg. pole permanentního magnetu rotoru. Pro tyto účely je tedy vhodné veličiny fixovat právě k souřadné soustavě rotoru. 
 
-Pro statickou soustavu jsme úspěchem využili Clarkovu trnsformaci, nyní, pro rotující vztažnou soustavu použijeme Parkovu (dq0) transformaci.
+Kromě soustavy spojené se statorem bývá někdy výhodné vyjádřit tyto večiny v soustavě spojené s rotorem.
+Pro dosažení maximálních momentových účinků, je totiž nutné, aby vektor megnetické indukce, magnetického pole vyvolávaného proudy protékající vinutím statoru, svíral pravý úhel s vektorem mg. indukce mg. pole permanentního magnetu rotoru. Pro tyto účely je tedy vhodné veličiny fixovat právě k souřadné soustavě rotoru. 
+
+Pro statickou soustavu jsme úspěchem využili Clarkovu transformaci, nyní, pro rotující vztažnou soustavu použijeme Parkovu (dq0) transformaci.
 
 Pro genralizovanou rotující soustavu bude transformace vypadat následovně (viz Obrázek \ref[park]):
 
@@ -166,6 +172,9 @@ $$
  
  PMS Motory se vyznačují plynulou rychlostí v celém rozsahu rotace a schopností plně řídit točivý moment i při nulové rychlosti. K tomu se využívaji techniky vektorového řízení. Ty rozloží proud protékající vinutím statoru na složky generující magnetické pole a točivý moment. Tyto složky pak můžeme řídit na sobě nezávisle a přiblížit se tak řízení obyčeného kartáčového DC motoru \cite[PMSMC]. Metematickým nástrojem jsou Clarkova a Parkova transformace popsané výše v této kapitole.
  
+ V této práci je implementovávo poziční řízení využívající sktečnosti, že největší momentové účinky vyvolává proud protékající fázemi za přepokladu, že vektor mg. indukce jím vyvolaného mg. pole svírá pravý úhel s vektorem mg. indukce mg. pole permanentního magnetu. Cílem řízení je tedy mimo jiné zaručit, aby tato kolmost nastala.
+ 
+  
  
  \chap Popis hardware
  
@@ -701,48 +710,137 @@ Frekvence řídicí smyčky byla stanovena v sekci \ref[ctr_loop_freq]. Nyní je
 
 Pro periodického vykonávání kódu o stanovené frekvenci je možné využít cyklu "while", v jehož těle je volána funkce realizující čekání. Nejjednodušší variantou takové funkce jsou knihovní volání "unsigned int sleep(unsigned int seconds)" a "int usleep(useconds_t usec)". Tato volání však neberou v úvahu čas, po který je vykonávána samotná periodická činnost. Prodleva, která jimi vyvolána se také může prodlužovat v závislossti na zatížení systému nebo na délce vykonávání samotného volání \cite[usleep_man].
 
-Je tedy nutné použít \uv{čekací} funkci s přesně definovaným chováním. To je funkce "int clock_nanosleep(...)". Její použití je následující:
+Je tedy nutné použít \uv{čekací} funkci s přesně definovaným chováním. Takovou funkcí je "int clock_nanosleep(...)". Při jejím volání, na místo čekání po stanovenou dobu, dojde k pozastavení vykonávání kódu do časového okamžiku definovaného ve struktuře "timespec". Na počátku je tedy nutné získat aktuální čas, k tomu slouží funkce  "int clock_gettime(clockid_t clk_id, struct timespec *tp)". Její použití je následující:
+
+\ttline 0
 \begtt      
-  struct timespec t;
-        struct sched_param param;
-        int interval = 50000; /* 50us*/
+struct timespec t_spec;
+clock_gettime(CLOCK_MONOTONIC ,&t_spec); /*zjisteni pocatecniho casu*/ \endtt
 
+"CLOCK_MONOTONIC" označuje použití systémových hodin, které pracují nezávisle na zatížení systému a není možné za běhu modifikovat jejich hodnotu.
 
-      clock_gettime(CLOCK_MONOTONIC ,&t);
-        /* start after one second */
-        t.tv_sec++;
+Poté je nutné inkrementovat "timespec" a nastavit tak okamžik opětovného spuštění kódu.
 
-        while(1) {
-                /* wait until next shot */
-                clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &t, NULL);
+\begtt
+t_spec.tv_sec++; /*pocatecni prodleva - 1s*/ \endtt
 
-                /* do the stuff */
+Nyní je již možné spustit samotnou smyčku. Při každém jejím průchodu je hodnota uložená ve struktuře "timespec" zvětšena o hodnotu rovnou periodě řídicí smyčky. V totmto připadě "1000*1000 ns".
 
-                /* calculate next shot */
-                t.tv_nsec += interval;
+\begtt
+while(1) {
+    /* čekání na stanovený časový okamžik */
+    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &t_spec, NULL);
 
-                while (t.tv_nsec >= NSEC_PER_SEC) {
-                       t.tv_nsec -= NSEC_PER_SEC;
-                        t.tv_sec++;
-                }
-   }
+    /* vlasntni kod ridici smycky */
 
-\endtt
+    t_spec.tv_nsec += PERIODA_NS; /*nastavení nového spouštěcího času*/ \endtt
+    
+Aby nedošlo k přetečení počtu nanosekund ve struktuře "timespec", je nutné průběžně přepočítávat nanosekundy na sekundy.
 
+\begtt
+    while (t_spec.tv_nsec >= NSEC_PER_SEC) {
+        t_spec.tv_nsec -= NSEC_PER_SEC;
+        t_spec.tv_sec++;
+}   }\endtt
 
+\secc Uzamčení aplikace v RAM
 
+Při vyšším zatížení systému může docházet k odkládání a výměně procesů (Swapping) mezi hlavní (RAM) a sekundární pamětí počítače. 
 
+Odložení procesu aplikace, vede ke zvýšení reakčních časů na vnější události. U magnetických disků může tímto způsobem narůstat zpoždění o až několik milisekund.\cite[iops] Z tohoto důvodu je nutné, aby proces řídicí aplikace zůstal uzamčen v primární paměti. K tomuto účelu je využíváno systémové volání "int mlockall(int flags)", které zajistí uzamčení stránek v hlavní paměti.
+
+Parametr "int flags" definuje, zda budou v hlavní paměti uzamčeny jen aktuálně namapované stránky (makro "MCL_CURRENT") nebo stránky namapované později (makro "MCL_FUTURE"). Tato makra je možno použít současně. Příklad použití je uveden níže:
+
+\ttline-1
+\begtt
+if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1) {
+    perror("mlockall failed");
+    exit(-2);
+}\endtt
+
+Takto použité volání zajistí, že nedojde v výpadku žádné stránky, která byla nebo bude namapováva do primární paměti počítače.
  
-
-
-
 \sec Elektronická komutace
+
+Jak bylo uvedeno výše, PMS motory nevyužívají ke komutaci mechanické kartáče, Komutace je zde řízena elektronicky. Komutaci je možné provádět několika způsoby v závislosti na informacích o stavu motoru, které máme k dispozici. Popisem těchto variant se zabývá právě tato sekce.
 
 \secc Komutace s využitím pouze Hallových sond
 
+Pokud není k dispozici absolutní poloha motoru, není možné řídit komutaci pomocí výstupu z IRC senzoru. V takovém připadě je realizován nejjednodušší způsob komutace, pouze za použití výstupu z Hallových sond.
+
+Výstup z Hallových sond umožňuje lokalizovat polohu motor ve dvanáctí úsecích mechanického plného úhlu. Vzhledem ke konstrukci motoru odpovídají jednomu mechanickému kruhu dva kruhy elektrické. Je tedy možné určit polohu motoru v rámci jednoho ze šesti úseků elektrického kruhu. Rozložení úseků elektrického kruhu je na obrázku \ref[hall_pos_obr].
+
+Z takto zjištěné polohy je následně možné řídit komutaci tak, aby proud procházel jen jednou z fází a docházelo tak k natočení rotoru do požadované pozice. 
+ 
+\medskip \clabel[hall_pos_obr]{Rozložení výstupů z Hallových sond}
+\picw=9cm \cinspic hall_pos.pdf
+\caption/f Rozložení výstupů z Hallových sond v elktrickém kruhu (trojice bitů uprostřed [Hall1 Hall2 hall3]). Závorkované hodnoty při vnějším okraji jsou vzdálenosti od indexu vypočténé pomocí IRC.
+\medskip 
+
+V obrázku \ref[hall_pos_obr] jsou pomocí šipek na barevných soustředných kružnicích vyznačeny dva směry pohybu rotoru. Pro každý ze směrů různě vybarvéné úseky dané kružnice značí, jaká fáze musí být při daném natočení napájena, aby došlo k pohybu žádaným směrem. Barevnými čísly u šipek směřujících od středu kružnic jsou pak označeny pozice, ve kterých dojde k ustálení motoru při napájení pouze dané fáze.
+
+Pokud je vyžadován pohyb ve směru hodinových ručiček, bude kód komutátoru následující:
+
+\begtt		
+if (hal2 && !hal3){
+    rps.pwm1=0;
+    rps.pwm2=0;
+    rps.pwm3=duty;
+}else if (hal1 && !hal2){
+    rps.pwm1=duty;
+    rps.pwm2=0;
+    rps.pwm3=0;
+}else if (!hal1 && hal3){
+    rps.pwm1=0;
+    rps.pwm2=duty;
+    rps.pwm3=0;
+} \endtt
+
+Velkou nevýhodou této komutace je kolísání točivého momentu v závislosti na úhlu natočení rotoru. Dochází tak k nepříjemnému otřásání motoru.
+
 \secc Komutace pomocí přičítání 120 stupňů
 
+Pokud je k dispozici absolutní poloha rotoru v rámci celého elektrického úhlu s dostatečnou přesností, je možné právádět komutaci tak, aby točivý moment zůstával konstantní v průběhu celé otáčky.
+
+Jednou z možností, jak realizovat takovou komutaci je simulovat sinusový průběh napětí na jednotlivých fázích. Fáze přitom budou oproti sobě posunuty o $120^{\circ}$
+
+Z hardwarových důvodů není možné pomocí pwm vyvolat ve fázi záporný proud. Tato skutečnost ale není na závadu, protože soustava tří fází je přeurčená ($ i_{sa} + i_{sb} + i_{sc} =0 $). Z toho důvodu záporný proud vznikne jako jako opačná hodnota součtu proudů kladných. Pro pohyb ve směru hodinových ručiček může být ve zdrojovém kódu taková operace provedena následovně:
+
+\begtt
+sin = pxmc_sin_fixed_inline(pos+DEGREE_240,10);
+pwm1=sin*duty/1024;
+if (pwm1<0) pwm1=0;
+
+sin = pxmc_sin_fixed_inline(pos+DEGREE_120,10); 
+pwm2=sin*duty/1024;
+if (pwm2<0) pwm2=0;
+
+sin = pxmc_sin_fixed_inline(pos,10);
+pwm3=sin*duty/1024;
+if (pwm3<0) pwm3=0;
+\endtt
+
+Kde "pxmc_sin_fixed_inline" je funkce, která celočíselně, s přesností 10 bitů, počítá hodnotu sinu. Proměnná "pos" udává úhlovou pozici rotoru. 
+
  \chap Závěr
+ 
+Cílem  práce  je  realizovat řízení pro  synchronní bezkartáčové motory s využitím jednodeskového počítače Raspberry PI a Linuxu. To vše při použití rozšiřující jednotky intergrující výkonový hardware a FPGA obvod.
+  
+  V první  části  práce  jsou  prezentovány  základy  vlastní konstrukce synchronního  bezkartáčového motoru,  princip  jeho  činnosti  a základní matematický popis. Jako vhodné matematické  nástroje jsou zde uvedeny Clarkova a Parkova transformace.
+  
+  Další kapitola podrobně popisuje použitý hadrware. Je zde věnován prostor motoru a jeho parametrům, rozšiřující jednotce nebo RPi a jeho vlastnostem. Zvláštní pozornost se dostala nasazení víceúčelového operačního systému GNU/Linux, a jeho RT-rozšíření, pro realizaci zpětvovazebního řízení. Bylo tak potvrzeno, že tento systém je použitelný a vhodný pro zadanou práci a je tak možné ho doporučit k podobným účelům. 
+  
+  Následující kapitola se již plně věnuje realizaci projektu. V úvodu je uvedeno, jaké požadavky klade řízený motor na frekvenci řídicí smyčky. S ohledem na možnosti procesorové jednotky je vybrána fekvence 1kHz. Realizace projektu prokázála, že řízení za této frekvence je možné. 
+  
+  Jako minimální objem dat přenášených mezi RPi a rozšiřující jednotkou v každém cyklu řídicí smyčky bylo stanoveno 128 bitů. Pro jejich přenos byl vybrán protokol SPI. Pro budoucí práci je možné doporučit využití právě tohotu protokolu. Zajímavou alternativou je ale použití protokolu SSI, který v sobě integruje přenos hodinového signálu.
+  
+  Pro možnou realizaci \uv{Sensorless} řízení je nezbyná znalost proudů, protékajících vinutím statoru. Jejich snímaní je prováděno s využitím Hallova jevu. Napětí, takto získané je převáděno 12-bitovým AD převodníkem. Zde bylo provedeno vylepšení snímání tohoto napětí, kdy byl místo jedné odečtené hodnoty posílán  řídicí jednotce jejich výběrový průměr. Toto řešeni vedlo k redukci šumu a tím ke zpřesnění naměřených hodnot.
+  
+  Vlastní sekce je věnována implementaci požadavků RT-rozšiření jádra Linux. Lze konstatovat, že bez jejich naplnění nelze uživatelské aplikaci garantovat deterministické chování. Samotná aplikace RT-rozšíření tak způsobí pouze prodloužení průměrného času odezvy na vnější událost, aniž by přinášela nějaké výhody.
+  
+  Pro výukové účely jsou implementovány pouze jednoduché metody elektronické komutace. Při použití komutace využívající jen výstup z Hallových sond dochází k nepříjemnému klepání. Jedná se ale o jedinou možnost, pokud nemáme k dispozici přesnou hodnotu natočení rotoru v rámci celého rozsahu otáčeni. S její znalostí je ale možné provádět komutaci založenou na fázovém posunu všech fází a odstranit tak tyto nedostatky.
+  
+   
  
 
  \bibchap
