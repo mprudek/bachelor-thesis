@@ -62,119 +62,278 @@ Na rozdíl od kartáčových motorů je komutace PMS motorů řízena elektronic
 
  \sec Matematický popis
  
- Pro matematický popis dějů v PMS motorech az vláště pak pro \uv{Sensorless} řízení jsou vhodným nástrojem Clarkova a parkova tranformace. Jejich použití je uvedeno v této sekci.
+ Pro matematický popis dějů v PMS motorech a vláště pak pro \uv{Sensorless} řízení jsou vhodným nástrojem Clarkova a Parkova tranformace. Jejich použití je uvedeno v této sekci.
  
  \secc Clarkova transformace
  
- Uvažujme $i_{sa}$, $i_{sb}$ a $i_{sc}$ proudy procházející vinutím statoru, platí:
+ Clarkova transformace umožňuje zobrazit proud protékající jednotlivými fázemi jako jeden vektor v komplexní rovině.
  
- $$ i_{sa} + i_{sb} + i_{sc} =0\eqmark $$
+ Uvažujme $i_{a}$, $i_{b}$ a $i_{c}$ proudy procházející vinutím statoru, platí:
+ 
+ $$\label[soucet_nula_rce] i_{a} + i_{b} + i_{c} =0\eqmark $$
  
  Toto může být vyjádřeno jako vektor v komplexní rovině, potom:
  
- $$ \overline{i} = i_{sa}+\hat{a}i_{sb}+\hat{a}^2i_{sc} \eqmark$$
- kde $\hat{a}$ a $\hat{a}^2$ jsou operátory posouvajíci fázi o $120^{\circ}$, $ \hat{a}=e^{{2j\pi}/{3}} $ a $\hat{a}^2=e^{{4j\pi}/{3}}$.
+ $$ \overline{i} = i_{a}+\hat{a}i_{b}+\hat{a}^2i_{c} \eqmark$$
+ 
+ kde $\hat{a}$ a $\hat{a}^2$ jsou operátory posouvajíci fázi o $\delta=120^{\circ}={2\pi\over3}rad$. Operátory mají podobu: $ \hat{a}=e^{j\delta} $ a $\hat{a}^2=e^{2j\delta}$. Po jejich dosazení je možné psát:
 
+ $$ \overline{i} = i_{a}+i_{b}e^{j\delta}+i_{c}e^{2j\delta} \eqmark$$
+ $$ \label[rce_cplx]\overline{i} = i_{a}+i_{b}(\cos{\delta}+j\sin{\delta})+i_{c}(\cos{\delta}+j\sin{\delta}) \eqmark$$
+ 
  
  $\overline{i}$ můžeme vyjádřit jako součet jeho reálné a imaginární složky:
 
- $$ \overline{i}=i_{s\alpha}+ji_{s\beta} \eqmark$$
+ $$ \overline{i}=i_{\alpha}+ji_{\beta} \eqmark$$
+ 
+ Z rovnice \ref[rce_cplx] tak možné napsat maticové vyjádření Clarkovy transformace:
+ 
+ $$
+ \label[clark_matrix_rce]
+  \left[\matrix{i_{\alpha} \cr
+                i_{\beta} \cr
+    }\right]
+    =
+  \left[\matrix{1&\cos{\delta}&\cos{2\delta} \cr
+                0&\sin{\delta}&\sin{2\delta} \cr
+    }\right]
+     \left[\matrix{i_{a} \cr
+                i_{b} \cr
+                i_{c}
+    }\right]
+    \eqmark$$
+    Grafické vyjádření je na obrázku \ref[proudy].
  
 \medskip \clabel[proudy]{Komplexní vyjádření vektoru proudu vinutím statoru}
 \picw=6cm \cinspic currents.pdf
 \caption/f Komplexní vyjádření vektoru proudu vinutím statoru (Clarkova transformace). $\alpha$ značí reálnou osu a $\beta$ značí imaginární osu.
 \medskip %obrazek zustal tam, kde ma. \midinsert ho posunul
 
-Se znalostí proudů, protékajících jednotlivými fázemi, pak můžeme vypočítat myšlené proudy tekoucí rovnoběžně s imaginární a reálnou osou.
-
- $$ 
- \eqalignno{ i_{s\alpha}&=(i_{sa}-i_{sb}/2-i_{sc}/2) \cr
-  i_{s\alpha}&=(2i_{sa}-i_{sb}-i_{sc})/3 & \eqmark \cr}
-  $$
+Po dosazení za $\delta=120^{\circ}$ do rovnice \ref[clark_matrix_rce] dostáváme:
+ $$
+  \left[\matrix{i_{\alpha} \cr
+                i_{\beta} \cr
+    }\right]
+    =
+  \left[\matrix{1&-{1\over2}&-{1\over2} \cr
+                0&{\sqrt{3}\over2}&-{\sqrt{3}\over2} \cr
+    }\right]
+     \left[\matrix{i_{a} \cr
+                i_{b} \cr
+                i_{c}
+    }\right]
+    \eqmark$$
  
-$$
-\eqalignno{ i_{s\beta}&=\sqrt{3}(i_{sb}-i_{sc})/2 \cr
-	i_{s\beta}&=(i_{sb}-i_{sc})/\sqrt{3}  & \eqmark \cr}
-$$
 
-Pro popis PMS motorů je uvažován ideálně symetrický motor se sinusoidně rozloženým vinutím. Pro takovou idealizaci uvažujeme napětí na vinutích $u_{sa}$, $u_{sb}$ a $u_{sc}$  následující:
+Pro popis PMS motorů je uvažován ideálně symetrický motor se sinusoidně rozloženým vinutím. Pro takovou idealizaci uvažujeme napětí na vinutích $u_{a}$, $u_{b}$ a $u_{c}$  následující:
 
 $$
 \label[rce1]
-u_{sa}=R_si_{sa}+{{d}\over{dt}}\psi_{sa} \eqmark$$
-$$ u_{sb}=R_si_{sb}+{{d}\over{dt}}\psi_{sb} \eqmark$$
-$$ u_{sc}=R_si_{sc}+{{d}\over{dt}}\psi_{sc} \eqmark$$
+u_{a}=R_si_{a}+{{d}\over{dt}}\psi_{a} \eqmark$$
+$$ u_{b}=R_si_{b}+{{d}\over{dt}}\psi_{b} \eqmark$$
+$$ u_{c}=R_si_{c}+{{d}\over{dt}}\psi_{c} \eqmark$$
 
-kde $\psi_{sa}$,$\psi_{sb}$ a $\psi_{sc}$ jsou magnetické indukční toky vyvolané proudy odpovídajících vinutí. Vyjádření napětí vektorem v Gaussově(komplexní) rovině (Clarkova transformace, $\alpha\beta$ transformace) bude následující:
+kde $\psi_{a}$,$\psi_{b}$ a $\psi_{c}$ jsou magnetické indukční toky vyvolané proudy odpovídajících vinutí. Vyjádření napětí vektorem v Gaussově(komplexní) rovině (Clarkova transformace) odpovídá:
 
- $$ u_{s\alpha}=R_si_{s\alpha}+{{d}\over{dt}}\psi_{s\alpha} \eqmark$$
- $$ u_{s\beta}=R_si_{s\beta}+{{d}\over{dt}}\psi_{s\beta} \eqmark$$
+ $$ u_{\alpha}=R_si_{\alpha}+{{d}\over{dt}}\psi_{\alpha} \eqmark$$
+ $$ u_{\beta}=R_si_{\beta}+{{d}\over{dt}}\psi_{\beta} \eqmark$$
  
- Přitom složky magnetického indukčního toku budou následující:
+ Přitom složky magnetického indukčního toku statoru budou:
  
- $$\psi_{s\alpha} = L_{s\alpha}i_{s\alpha} + \psi_Mcos\theta_r \eqmark$$
- $$\psi_{s\beta} = L_{s\beta}i_{s\beta} + \psi_Msin\theta_r \eqmark$$
+ $$\psi_{\alpha} = L_{\alpha}i_{\alpha} + \psi_Mcos\theta \eqmark$$
+ $$\psi_{\beta} = L_{\beta}i_{\beta} + \psi_Msin\theta \eqmark$$
  
- kde $\theta_r$ je úhlová pozice rotoru a $\psi_M$ je magnetický indukční tok rotoru. $L_{s\alpha}$ a $L_{s\beta}$ jsou složky vzájemné indukčnosti rotor-stator.  
+ kde $\theta$ je úhlová pozice rotoru a $\psi_M$ je magnetický indukční tok rotoru. $L_{\alpha}$ a $L_{\beta}$ jsou složky vzájemné indukčnosti rotor-stator.  
 
 Úhlové zrychlení takového motoru o zátěži $T_L$ s $p$ póly připadajícími na každou fázi můžeme vyjádřit jako:
 
 $$
 \label[rce2]
 {d\omega\over{dt}}=
-{p\over{j}}\lbrack{3\over{2}}p(\psi_{s\alpha}i_{s\beta}-\psi_{s\beta}i_{s\alpha})-T_L\rbrack
+{p\over{j}}\lbrack{3\over{2}}p(\psi_{\alpha}i_{\beta}-\psi_{\beta}i_{\alpha})-T_L\rbrack
 \eqmark
 $$
 
-Rovnice \ref[rce1] az \ref[rce2] představují model PMS motoru v souřadné soustavě ($\alpha, \beta$) spojené se statorem.
+Rovnice \ref[rce1] az \ref[rce2] představují model PMS motoru v souřadné soustavě ($\alpha, \beta$) spojené se statorem \cite[PMSMC].
 
+\secc Parkova transformace
 
+Kromě soustavy spojené se statorem bývá někdy výhodné vyjádřit proudy a další veličiny v soustavě spojené s rotorem. Pro dosažení maximálních momentových účinků, je totiž nutné, aby vektor megnetické indukce, magnetického pole vyvolávaného proudy protékající vinutím statoru, svíral pravý úhel s vektorem mg. indukce mg. pole permanentního magnetu rotoru. 
 
-Kromě soustavy spojené se statorem bývá někdy výhodné vyjádřit tyto večiny v soustavě spojené s rotorem.
-Pro dosažení maximálních momentových účinků, je totiž nutné, aby vektor megnetické indukce, magnetického pole vyvolávaného proudy protékající vinutím statoru, svíral pravý úhel s vektorem mg. indukce mg. pole permanentního magnetu rotoru. Pro tyto účely je tedy vhodné veličiny fixovat právě k souřadné soustavě rotoru. 
+Pro tyto účely je tedy vhodné veličiny fixovat k osám spojeným právě s rotorem. Osy jsou nazývané {\em d} a {\em q} a jejich poloha je ilustrována na obrázku \ref[dq0]. 
 
-Pro statickou soustavu jsme úspěchem využili Clarkovu transformaci, nyní, pro rotující vztažnou soustavu použijeme Parkovu (dq0) transformaci.
-
-Pro genralizovanou rotující soustavu bude transformace vypadat následovně (viz Obrázek \ref[park]):
-
-$$ \overline{i_{sg}}=\overline{i_s}e^{-j\theta_g} \eqmark$$
-
-\medskip \clabel[park]{Parkova transformace}
-\picw=8cm \cinspic StatorCurrents.pdf
-\caption/f Parkova transformace 
-\medskip 
-
-A pro soustavu spojenou s rotorem již můžeme dosadit:
-
-$$u_{sd}=R_si_{sd}+{d\over{dt}}\psi_{sd}-\omega_r\psi_{sq} \eqmark $$
-$$u_{sq}=R_si_{sq}+{d\over{dt}}\psi_{sq}-\omega_r\psi_{sd} \eqmark $$
-
-kde $\psi$ jsou odpovídající mg. indukční toky a $\omega_r$ je úhlová rychlost rotoru.
-
- $$\psi_{sd} = L_{sd}i_{sd} + \psi_M \eqmark$$
- $$\psi_{sq} = L_{sq}i_{sq} \eqmark$$
- 
-Úhlové zrychlení: 
- 
-$$
-\label[rce3]
-{d\omega\over{dt}}=
-{p\over{j}}\lbrack{3\over{2}}p(\psi_{sd}i_{sd}-\psi_{sq}i_{sq})-T_L\rbrack
-\eqmark
-$$
+V soustavě spojené se statorem byly veličiny s úspěchem vyjádřeny pomocí Clarkovy transformace. K jejich vyjádření v soustavě rotující společně s rotorem, je silným nástrojem transformace Parkova (dq0 transformace).
 
  \medskip \clabel[dq0]{Poloha os Parkovy transformace}
 \picw=8cm \cinspic dq0.pdf
 \caption/f Osy d(direct) a q(quadrature) jsou voleny vzhledem k rotoru.
 \medskip 
 
+Transformace je realizována podobně, jako v předchozím případě, pomocí operátoru otočení. Vektor  $\overline{i}_{r} $ symbolizuje komplexní vektor proudu vztažený k osám {\em d} a {\em q}.
+
+$$ \overline{i}_r=\overline{i}e^{-j\theta} \eqmark$$ 
+$$ \label[park_cplx_rce] 
+\overline{i}_r=i_d+ji_q=(i_{\alpha} + ji_{\beta})(\cos{\theta} - j\sin{\theta})
+ \eqmark$$ 
+
+Napětí je tak možné přepsat jako:
+
+$$u_{d}=R_si_{d}+{d\over{dt}}\psi_{d}-\omega_r\psi_{q} \eqmark $$
+$$u_{q}=R_si_{q}+{d\over{dt}}\psi_{q}-\omega_r\psi_{d} \eqmark $$
+
+kde $\omega_r$ je úhlová rychlost rotoru. $\psi_d$ a $\psi_q$ jsou složky magnetického indukčního toku statoru vyjádřeného v {\em dq0} souřadném systému. 
+
+Jednotlivé složky je možné vyjádřit: 
+
+ $$\psi_{d} = L_{d}i_{d} + \psi_M \eqmark$$
+ $$\psi_{q} = L_{q}i_{q} \eqmark$$
+ 
+Úhlové zrychlení v {\em dq0} souřadném systému \cite[PMSMC]: 
+ 
+$$
+\label[rce3]
+{d\omega\over{dt}}=
+{p\over{j}}\lbrack{3\over{2}}p(\psi_{d}i_{d}-\psi_{q}i_{q})-T_L\rbrack
+\eqmark
+$$
+
+\medskip \clabel[park]{Parkova transformace}
+\picw=8cm \cinspic StatorCurrents.pdf
+\caption/f Parkova transformace 
+\medskip
+
+  Pomocí rovnice \ref[park_cplx_rce] je možné vyjádřit také maticový tvar Parkovy transformace:
+
+  $$
+  \label[rce_park]
+  \left[\matrix{i_{d} \cr
+                i_{q} 
+    }\right]
+    =
+  \left[\matrix{\cos{\theta}&\sin{\theta} \cr
+                -\sin{\theta}&\cos{\theta} 
+    }\right]
+     \left[\matrix{i_{\alpha} \cr
+                i_{\beta} 
+    }\right]
+    \eqmark
+    $$
+
+\label[rizeni_sec]
  \sec Řízení
  
  PMS Motory se vyznačují plynulou rychlostí v celém rozsahu rotace a schopností plně řídit točivý moment i při nulové rychlosti. K tomu se využívaji techniky vektorového řízení. Ty rozloží proud protékající vinutím statoru na složky generující magnetické pole a točivý moment. Tyto složky pak můžeme řídit na sobě nezávisle a přiblížit se tak řízení obyčeného kartáčového DC motoru \cite[PMSMC]. Metematickým nástrojem jsou Clarkova a Parkova transformace popsané výše v této kapitole.
  
  V této práci je implementovávo poziční řízení využívající sktečnosti, že největší momentové účinky vyvolává proud protékající fázemi za přepokladu, že vektor mg. indukce jím vyvolaného mg. pole svírá pravý úhel s vektorem mg. indukce mg. pole permanentního magnetu. Cílem řízení je tedy mimo jiné zaručit, aby tato kolmost nastala.
  
+ Tuto podmínku je možné zaručit, pokud kopmlexní vektor proudu $\overline{i}$ bude rovnoběžný s osou $q$ Parkovy tarnsformace. Má-li směr stejný, motor se bude otáčet po směru hodinových ručiček. Při směru opačném dode k opačnému pohybu.
+ 
+ Matematickým nástrojem, jak tohoto dosáhnou jsou inverzní Parkova a Clarkova transformace. Pro názornost jsou zde uváděny v maticovém tvaru.
+  \secc Inverzní Parkova transformace
   
+  Maticový tvar dopředné Parkovy transformace je uveden v rovnici \ref[rce_park]. Transformační matice je regulární a je tedy možné jednoduše vytvořit její inverzi:
+    
+   $$
+   \label[inv_clark_rce]
+  \left[\matrix{i_{\alpha} \cr
+                i_{\beta} 
+    }\right]
+    =
+  \left[\matrix{\cos{\theta}&-\sin{\theta} \cr
+                \sin{\theta}&\cos{\theta} 
+    }\right]
+     \left[\matrix{i_{d} \cr
+                i_{q} 
+    }\right]
+    \eqmark
+    $$
+   
+      
+  
+    
+    V případě, že je úhel odečítán opačným směrem, než je v matematice obvyklé (obvyklý směr je proti chodu hodinových ručiček), je možné do rovnic dosadit $\theta=-\vartheta$. 
+  $$
+   \label[inv_clark_rce_2]
+  \left[\matrix{i_{\alpha} \cr
+                i_{\beta} 
+    }\right]
+    =
+  \left[\matrix{\cos{\vartheta}&\sin{\vartheta} \cr
+                -\sin{\vartheta}&\cos{\vartheta} 
+    }\right]
+     \left[\matrix{i_{d} \cr
+                i_{q} 
+    }\right]
+    \eqmark
+    $$    
+    Tento případ se týká i řešení použitého v této práci.
+ 
+
+    
+ \secc Inverzní Clarkova transformace
+ 
+Nyní jsou již k dispozici hodnoty $i_{\alpha}$ a $i_{\beta}$, k jejich přepočtení na jednotlivé fáze slouží inverzní Clarkova transformace.  
+
+Vytvořit inverzi k transformační matici v rovnici \ref[clark_matrix_rce] není možné. Je tedy nutné rozšířit transformaci o osu $\gamma$. Proud v této ose označme $i_{\gamma}$ a definujme $i_{\gamma}=z( i_{a} + i_{b} + i_{c})$.
+ 
+ $$
+  \left[\matrix{i_{\alpha} \cr
+                i_{\beta} \cr
+                i_{\gamma}
+    }\right]
+    =
+  k\left[\matrix{1&\cos{\delta}&\cos{2\delta} \cr
+                0&\sin{\delta}&\sin{2\delta} \cr
+                z&z&z
+    }\right]
+     \left[\matrix{i_{a} \cr
+                i_{b} \cr
+                i_{c}
+    }\right]
+    \eqmark
+    $$
+ 
+Tímto způsobem byla transformační matice rozšířenana velikost 3x3. Matice je regulární a je tak možné vytvořit matici inverzní a celé inverzní zobrazení.
+
+ $$
+   \left[\matrix{i_{a} \cr
+                i_{b} \cr
+                i_{c}
+    }\right]
+    =
+  {{2}\over{3k}}\left[\matrix{1&0&{2\over{z}} \cr
+                \cos{\delta}&\sin{\delta}&{2\over{z}}\cr
+                \cos{2\delta}&\sin{2\delta}&{2\over{z}}
+    }\right]
+  \left[\matrix{i_{\alpha} \cr
+                i_{\beta} \cr
+                i_{\gamma}
+    }\right]
+    \eqmark 
+    $$
+ 
+ Pokud je transformační konstanta rovna $k={2\over{3}}$, nedochází k zesílení požadovaných proudů. Konstanta $z$ bývá z estetických důvodů volena $z={1\over2}$. Pokud do takto zvolených konstant dosadíme a vyčíslíme též $\delta=120^{\circ}={2\pi\over3}rad$, bude rovnice vypadat:
+
+  
+   $$
+   \label[inv_clark_num_rce]
+   \left[\matrix{i_{a} \cr
+                i_{b} \cr
+                i_{c}
+    }\right]
+    =
+  \left[\matrix{1&0&1 \cr
+                -{1\over2}&{\sqrt{3}\over2}&1\cr
+                -{1\over2}&{-\sqrt{3}\over2}&1
+    }\right]
+  \left[\matrix{i_{\alpha} \cr
+                i_{\beta} \cr
+                i_{\gamma}
+    }\right]
+    \eqmark 
+    $$
+ 
+ Zde je nutné připomenout, že z rovnice \ref[soucet_nula_rce] vyplývá:  $i_{\gamma}=z( i_{a} + i_{b} + i_{c}) = 0 $.
  
  \chap Popis hardware
  
@@ -804,7 +963,7 @@ Pokud je k dispozici absolutní poloha rotoru v rámci celého elektrického úh
 
 Jednou z možností, jak realizovat takovou komutaci je simulovat sinusový průběh napětí na jednotlivých fázích. Fáze přitom budou oproti sobě posunuty o $120^{\circ}$
 
-Z hardwarových důvodů není možné pomocí pwm vyvolat ve fázi záporný proud. Tato skutečnost ale není na závadu, protože soustava tří fází je přeurčená ($ i_{sa} + i_{sb} + i_{sc} =0 $). Z toho důvodu záporný proud vznikne jako jako opačná hodnota součtu proudů kladných. Pro pohyb ve směru hodinových ručiček může být ve zdrojovém kódu taková operace provedena následovně:
+Z hardwarových důvodů není možné pomocí pwm vyvolat ve fázi záporný proud. Tato skutečnost ale není na závadu, protože soustava tří fází je přeurčená viz. rovnice \ref[soucet_nula_rce]. Z toho důvodu záporný proud vznikne jako opačná hodnota součtu proudů kladných. Pro pohyb ve směru hodinových ručiček může být ve zdrojovém kódu taková operace provedena následovně:
 
 \begtt
 sin = pxmc_sin_fixed_inline(pos+DEGREE_240,10);
@@ -822,6 +981,45 @@ if (pwm3<0) pwm3=0;
 
 Kde "pxmc_sin_fixed_inline" je funkce, která celočíselně, s přesností 10 bitů, počítá hodnotu sinu. Proměnná "pos" udává úhlovou pozici rotoru. 
 
+\secc Vektorové řízení
+
+Vektorový řízení využívá pro výpočet proudu jednotlivými fázemi Clarkovu a Parkovu inverezní transformaci. S jejich pomocí je možné řídit směr pohybu rotoru pouze řízením složky proudu rovnoběžné s osou {\em q} v {\em dq0} souřadném systému. Tato metoda je popsána v sekci \ref[rizeni_sec]. 
+
+Implementace vektorového řízení ve zdrojovém kódu zahrnuje především vytvoření funkcí pro obě inverzní transformace.
+
+Algoritmus pro výpočet inverzní Parkovy transformace vychází z rovnice \ref[inv_clark_rce_2]:
+\begtt
+{
+	alpha=cos*d+sin*q;
+	beta=-sin*d+cos*q;
+	}
+\endtt
+
+Clarkova inverzní transformace je zde vytvořena pomocí \ref[inv_clark_num_rce], její kód je následující:
+\begtt
+	*pwma=alpha;
+	*pwmb=-alpha/2+beta*887/1024;
+	*pwmc=-alpha/2-beta*887/1024;
+\endtt
+
+
+\begtt
+	uint32_t pos;
+	int32_t sin, cos;
+	int32_t alpha, beta;
+	int32_t pwma,pwmb,pwmc;
+	pos=rps.index_dist;
+
+	/*use it as cyclic 32-bit logic*/
+	pos*=4294967;
+	pxmc_sincos_fixed_inline(&sin, &cos, pos, 16);
+	dq2alphabeta(&alpha, &beta,0,duty, sin, cos);
+	alpha>>=16;
+	beta>>=16;
+	alphabeta2pwm3(&pwma,&pwmb, &pwmc,alpha,beta);
+	\endtt
+
+	
  \chap Závěr
  
 Cílem  práce  je  realizovat řízení pro  synchronní bezkartáčové motory s využitím jednodeskového počítače Raspberry PI a Linuxu. To vše při použití rozšiřující jednotky intergrující výkonový hardware a FPGA obvod.
