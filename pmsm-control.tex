@@ -8,9 +8,11 @@
  \author {Martin Prudek}
  \date {Květen, 2015}
  \supervisor {Ing. Pavel Píša, Ph.D.}
- \studyinfo  {Studiní program: Kybernetika a robotika. 
+ \studyinfo  {Studiní program: Kybernetika a robotika.
+ 
  
  Obor: Systémy a řízení.}  % Study programme etc.
+ \specification {\picw=16.6cm \cinspic zadani.pdf }
  \abstractEN {Bachelor thesis is focused on control of permanent magnet synchronous motors (PMSM) with single-board computer Raspberry Pi and Linux. For this purpose expansion unit which integrates power management and field-programmable gate array (FPFA) is used.
  
  The first part of thesis deals with theory of PMSM, including their construction, mathematical description and possibilities of control. After this takes place presentation of used hardware, Raspberry Pi, expansion unit and motor.
@@ -58,27 +60,26 @@
 
  \chap Úvod
  
-  Elektrické motory jsou již dlouhou dobu nedílnou součástí moderní civilizace. Jejich řízení se stalo důležitou disciplínou, potřebnou v~mnoha aplikacích. Postupem času se přitom stává výhodnějším i pro menší výkony použít složitější elektroniku než řešit komutaci mechanickými kartáči.
+  Elektrické motory jsou již dlouhou dobu nedílnou součástí moderní civilizace. Jejich řízení se stalo důležitou disciplínou, potřebnou v~mnoha aplikacích. Postupem času se přitom stává výhodnějším i pro menší výkony použít složitější elektroniku než řešit komutaci mechanickými kartáči. 
   
-  S~rozvojem technologií a digitálních řidicích zařízení je možné využít automatizaci i tam, kde to dříve nebylo možné. Je to patrné například na stále běžnějším využití ruzných dronů či multikoptér. Zařízení dříve považovaná za přísně střežená vojenská tajemství se dnes, jako už mnohokrát v~dějinách, stávají běžnou součástí našich domácností. 
+  Synchronní bezkartáčový motor přitom nabízí ve srovnáním s~konvenčním  DC motorem několik výhod. Nedochází k takovému opotřebení mechanických částí, ani ke kolísání točivého momentu v průběhu otáčky. Zvyšuje se efektivita. Více o~PMS motorech je uvedeno v~kapitole \ref[chap_pmsm].
   
-  Vývoj se však nepohybuje jen ve směru zdokonalování technologií, neboť v~mnoha situacích je rozhodujícím faktorem cena. Návrhář řídicího systému se musí v~hojných případech rozhodovat mezi dvěma variantami. Buď použít často velmi levný analogový řídicí obvod, který je ale úzce specializovaný a při úpravě parametrů se jeho modifikace dále velmi prodražují. Nebo řídicí počítač, který při změně problému stačí mnohdy jen přeprogramovat. Na trh se přitom dostává mnoho velmi levných zařízení, z~nichž některá jsou myšlena spíše jako hračky či výúkové nástroje. 
+  Cílem práce je především výuka řízení a možnost experimentování. Pro tyto účely má smysl pro řízení použít kompletní systém typu Linuxového stroje i tam, kde se produkční provedení realizují malými MCU. Do takto rozsáhlého systému je možné snadno integrovat i další funkce právě například pro výuku nebo další rozšíření. Výhodou je také pohodlný vzdálený přístup přes SSH nebo HTTP, který malé MCU ve velké míře neumožňují.
+
+Na trhu je dnes celá řada malých zařízení, která nedosahují kvalit potřebných pro průmyslové nasazení. Je ale možné je využít k návrhu řízení a komunikace s výkonovou částí. Takto vytvořená řešení jsou pak použitelná i při nasazení na profesionálnějších systémech.
   
-  Právě taková zařízení, která se již jeví únosně i pro průmyslové nasazení, může být zajímavé propojit s~již vyzkoušeným hardware. Tím spíše, pokud na vybraném zařízení pracuje univerzální operační systém - např. GNU/Linux. Tato práce se tak stává studií právě takového řešení.
-  
-   Z~široké nabídky takových zařízení, jako jsou BeagleBone, Raspberry Pi či Banana Pi  
+   Z široké nabídky takových zařízení, jako jsou BeagleBone, Raspberry Pi či Banana Pi  
  \fnote{Root.cz, Srovnání: Raspberry Pi a jeho největší konkurenti \url{http://www.root.cz/clanky/srovnani-raspberry-pi-a-jeho-nejvetsi-konkurenti/}} 
- jsme vybrali pro tuto práci Raspberry PI model B rev. 2.0. 
+ bylo vybráno pro tuto práci Raspberry PI model B rev. 2.0. 
  
- {\bf Raspberry Pi} (dále jen Rpi) je počítač realizovaný na jednom plošném spoji, velikosti kreditní karty, který od roku 2006 vyvíjí britská nadace {\em Raspberry Pi Foundation} \fnote{web Raspberry Pi Foundation\url{https://www.raspberrypi.org/}}. Výhodou je možnost využití univerzálního operačního systému, například výrobcem připraveného sestavení operačního systému GNU/Linux na bázi distribuce Debian. Na takto upravený systém, pojmenovaný Raspbian, je pak možné aplikovat Real-Time modifikaci, která zajistí splnění časových omezení vyžadovaných řízením. Více k~Rpi a RT modifikaci Linuxu uvedu v~sekci \ref[sec_rpi] a \ref[sec_rt].
+ {\bf Raspberry Pi} (dále také \uv{RPi}) je počítač realizovaný na jednom plošném spoji, velikosti kreditní karty, který od roku 2006 vyvíjí britská nadace {\em Raspberry Pi Foundation} \fnote{web Raspberry Pi Foundation\url{https://www.raspberrypi.org/}}. Výhodou je možnost využití univerzálního operačního systému, například výrobcem připraveného sestavení operačního systému GNU/Linux na bázi distribuce Debian. Na takto upravený systém, pojmenovaný Raspbian, je pak možné aplikovat Real-Time modifikaci, která zajistí splnění požadavků řídicí aplikace. Více k~Raspberry Pi a RT modifikaci Linuxu uvedu v~sekci \ref[sec_rpi] a \ref[sec_rt].
  
- U~tohoto počítače již byla prostudována možnost řízení stejnosměrného motoru s~využitím zpracování impulzů inkrementálního rotačního senzoru polohy \cite[Meciar]. Stejně tak jako u~podobných levných zařízení i zde však naražíme na hranice, které nám tento hardware, zvláště s~využitím univerzálního OS, nedovoluje překonat. U~\glref{RPi} tak docházelo ke kritickým časovým prodlevám při zpracovávání přijatých pulsů, čímž se ztrácela informace o~poloze. Takové chování nastávalo již od frekvence pulsů 14kHz, což při 500 pulsech na jednu otočku dělá 2100ot/min. Tedy ve chvíli, kdy perioda příchodu pulsů byla srovnatelná s~dobou odezvy systému na tento druh události.
+ U~tohoto počítače již byla prostudována možnost řízení stejnosměrného motoru s~využitím softwarového zpracování impulzů inkrementálního rotačního senzoru polohy \cite[Meciar]. Pro použitý, nepříliš výkonný, hardware však softwarové dekódování impulzů představuje pro vyšší rychlosti otáčení motoru takovou zátěž, kterou již není schopen operační systém bezchybně obsloužit. U~RPi tak docházelo ke kritickým časovým prodlevám při zpracovávání přijatých pulsů, čímž se ztrácela informace o~poloze. Takové chování nastávalo již od frekvence pulsů 14kHz, což při 500 pulsech na jednu otočku dělá 2100ot/min. Tedy ve chvíli, kdy perioda příchodu pulsů byla srovnatelná s~dobou odezvy systému na tento druh události.
  
- Výdodným řeším tohoto problému se stává přesunutí zpracování pulsů \glref{IRC} do samostatné periferie a zjištěnou polohu motoru posílat jako celek. Rpi tedy zpracovává jen jednu řídicí smyčku o~neměnné frekvenci, z~hlediska výpočetního výkonu tedy již otáčky motoru nehrají roli. Protože RPi nedisponuje periferíí vhodnou pro tento účel, byla pro tuto práci použita rozšiřující deska vyvinutá firmou {\em PiKRON} \fnote{PiKRON \url{http://www.pikron.com/}}. Tato deska umožňuje návrh potřebné logiky v~\glref{FPGA} obvodu. Podrobnosti v~sekci \ref[sec_fpga].
+ Výhodným řeším tohoto problému se stává přesunutí zpracování pulsů \glref{IRC} do samostatné periferie a zjištěnou polohu motoru posílat v binární podobě. RPi tedy zpracovává jen jednu řídicí smyčku o~neměnné frekvenci. Z~hlediska výpočetního výkonu tedy již otáčky motoru nehrají roli. Protože RPi nedisponuje periferíí vhodnou pro tento účel, byla pro tuto práci použita rozšiřující deska vyvinutá firmou {\em PiKRON} \fnote{PiKRON \url{http://www.pikron.com/}}. Tato deska umožňuje návrh potřebné logiky v~\glref{FPGA} obvodu. Podrobnosti v~sekci \ref[sec_fpga].
  
- Pro propojení rozšiřující desky a nadřazeného systému (RPi) bylo třeba vybrat jednoduchý komunikační protokol. Požadavkem byla možnost obousměrné komunikace a dostatečná rychlost, která umožní vzhledem k~frekvenci řídicí smyčky přenést dostatečný objem dat. Bylo také nutné, aby použitý protokol byl natolik nekomplikovaný, že půjde výhodně realizovat v~FPGA obvodu a na straně druhé pohodlně zpracovat v~jádře operačního systému na RPi. 
- 
- Jak jsem již zmínil, překotný vývoj digitálních řidicích zařizení hlavně koncem druhé poloviny 20. století nábídl možnosti jejich využití i tam, kde to dříve nebylo možné. Dalším důležitým milníkem je i pokrok v~řízení výkonu a využití nových výkonových spínacích prvků. Příkladem nechť je návr řízení synchronního bezkartáčového motoru s~permanentním magnetem v~rotoru (dále PMS motory či jen PMSM). Bez digitálního zpracování dat a PWM modulace by jeho provoz nebyl možný. Takový motor přitom nabízí ve srovnáním s~konvenčním  DC motorem několik výhod. Odpadá totiž použití kartáčů, nedochází ke kolísání točivého momentu a zvvyšuje se efektivita. Více o~PMS motorech uvedu v~kapitole \ref[chap_pmsm].
+ Pro propojení rozšiřující desky a nadřazeného systému (RPi) bylo třeba vybrat jednoduchý komunikační protokol. Požadavkem byla možnost obousměrné komunikace a dostatečná rychlost, která umožní pro  požadovanoufrekvenci řídicí smyčky přenést dostatečný objem dat. Bylo také nutné, aby použitý protokol byl pokud možno jednoduše realizovatelný v~FPGA obvodu a zároveň ho bylo možné pohodlně zpracovat v~jádře operačního systému na RPi. Více o výběru a implementaci komunikačního protokolu v sekci \ref[kom_prot_sec].
+
 
  
  \label[chap_pmsm]
@@ -556,6 +557,7 @@ Pro měření proudu přímo jednotlivými fázemi motoru je použita sada senzo
  Ke výměně stejného objemu dat dojde z~důvodu použitého komunikačního protokolu i v~opačném směru. Z~RPi do rozšiřující jednotky přichází tři 11-bitové informace o~šířce plnění PWM. Tyto hodnoty jsou ale z~důvodu snadnějšího použití zarovnány na 16 bitů. Jen dolních 11 z~nich je ale využito. Součástí přenosu jsou ještě 3 bity odemykající poloviční H-můstky a 3 bity určené k~jejich úplné deaktivaci. Poslední využitý bit pak při změně z~logické 0 do 1 povoluje resetování AD převodníku. Celkem je v~tomto směru komunikace využito jen 40 ze 128 bitů.
  
  
+ \label[kom_prot_sec]
  \sec Komunikační protokol
  
  Výběr komunikačního protoku mezi RPi a FPGA obvodem se stal jednou z~prvních otázek a bylo ji třeba zodpovědět již na začátku práce. 
