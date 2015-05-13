@@ -66,7 +66,7 @@
   
   Cílem práce je především výuka řízení a možnost experimentování. Pro tyto účely má smysl pro řízení použít kompletní systém typu Linuxového stroje i tam, kde se produkční provedení realizují malými MCU. Do takto rozsáhlého systému je možné snadno integrovat i další funkce právě například pro výuku nebo další rozšíření. Výhodou je také pohodlný vzdálený přístup přes SSH nebo HTTP, který malé MCU ve velké míře neumožňují.
 
-Na trhu je dnes celá řada malých zařízení, která nedosahují kvalit potřebných pro průmyslové nasazení. Je ale možné je využít k návrhu řízení a komunikace s výkonovou částí. Takto vytvořená řešení jsou pak použitelná i při nasazení na profesionálnějších systémech.
+Na trhu je dnes celá řada malých jednodeskových počítačů, které nedosahují kvalit potřebných pro průmyslové nasazení. Je ale možné je využít k návrhu řízení a komunikace s výkonovou částí. Takto vytvořená řešení jsou pak použitelná i při nasazení na profesionálnějších systémech.
   
    Z široké nabídky takových zařízení, jako jsou BeagleBone, Raspberry Pi či Banana Pi  
  \fnote{Root.cz, Srovnání: Raspberry Pi a jeho největší konkurenti \url{http://www.root.cz/clanky/srovnani-raspberry-pi-a-jeho-nejvetsi-konkurenti/}} 
@@ -78,7 +78,9 @@ Na trhu je dnes celá řada malých zařízení, která nedosahují kvalit potř
  
  Výhodným řeším tohoto problému se stává přesunutí zpracování pulsů \glref{IRC} do samostatné periferie a zjištěnou polohu motoru posílat v binární podobě. RPi tedy zpracovává jen jednu řídicí smyčku o~neměnné frekvenci. Z~hlediska výpočetního výkonu tedy již otáčky motoru nehrají roli. Protože RPi nedisponuje periferíí vhodnou pro tento účel, byla pro tuto práci použita rozšiřující deska vyvinutá firmou {\em PiKRON} \fnote{PiKRON \url{http://www.pikron.com/}}. Tato deska umožňuje návrh potřebné logiky v~\glref{FPGA} obvodu. Podrobnosti v~sekci \ref[sec_fpga].
  
- Pro propojení rozšiřující desky a nadřazeného systému (RPi) bylo třeba vybrat jednoduchý komunikační protokol. Požadavkem byla možnost obousměrné komunikace a dostatečná rychlost, která umožní pro  požadovanoufrekvenci řídicí smyčky přenést dostatečný objem dat. Bylo také nutné, aby použitý protokol byl pokud možno jednoduše realizovatelný v~FPGA obvodu a zároveň ho bylo možné pohodlně zpracovat v~jádře operačního systému na RPi. Více o výběru a implementaci komunikačního protokolu v sekci \ref[kom_prot_sec].
+ Pro propojení rozšiřující desky a nadřazeného systému (RPi) bylo třeba vybrat jednoduchý komunikační protokol. Požadavkem byla možnost obousměrné komunikace a dostatečná rychlost, která umožní pro  požadovanou frekvenci řídicí smyčky přenést dostatečný objem dat. Bylo také nutné, aby použitý protokol byl, pokud možno, jednoduše realizovatelný v~FPGA obvodu a zároveň ho bylo možné pohodlně zpracovat v~jádře operačního systému na RPi. Více o výběru a implementaci komunikačního protokolu v sekci \ref[kom_prot_sec].
+ 
+ Bylo otestováno jednoduché řízení podle kombinace Hallových senzorů popsané v sekci \ref[hall_only_sec]. Napěťové řízení se sinusovým průběhem v sekci \ref[120_sec] a jednoduché vektorové řízení v sekci \ref[vektor_impl_sec].
 
 
  
@@ -89,7 +91,7 @@ PMS (Permanent Magnet Synchronous) motory jsou díky vysoké efektivitě a robus
 
 Na rozdíl od kartáčových motorů je komutace PMS motorů řízena elektronicky, což přínáší vyšší požadavky na řídicí hardware. Ve chvíli, kdy dnes většina aplikací vyžaduje elektronické řízení jak rychlosti, tak točivého momentu, nepředstavuje ale řídicí elektronika zátěž navíc. \cite[sensorless]. Odměnou je naopak výšší výkon v~poměru k~váze, stejně tak točivý moment v~poměru k~příkonu. Výhodou jsou také nížší hlučnost a delší životnost, protože nedochází k~opotřebení kartáčů a mechanických částí komutátoru. \cite[PMSM-Kinetis] Elektronická komutace bývá implementována v~procesorovém systému, či speciálním obvodu (FPGA / ASIC)\cite[Meloun].
  
- 3-fázové synchronní motory s~permanentním magnetem se často využívají kromě PMS varianty se sinusovým průběhem \glref{BEMF} také v~\glref{BLDC} variantě s~lichoběžníkovým (trapezoidal) průběhem BEMF. Přičemž výhodou PMSM je konstatní točivý moment v~celém rozsahu otáčení, zatímco BLCD motor je snadněji řiditelný a dnes se využívá převážně z~historických  důvodů. \cite[sensorless]
+ 3-fázové synchronní motory s~permanentním magnetem se často využívají kromě PMS varianty se sinusovým průběhem \glref{BEMF} také v~\glref{BLDC} variantě s~lichoběžníkovým (trapezoidal) průběhem BEMF. Přičemž výhodou PMSM je konstatní točivý moment v~celém rozsahu otáčení, zatímco BLCD motor je snadněji řiditelný a dnes se již využívá převážně z~historických  důvodů. \cite[sensorless]
  \sec Konstrukce
  
  Základ konstrukce PMS Motoru tvoří rotor s~permanentním magnetem a stator, kterým prochází vinutí jednotlivých fází. 
@@ -104,7 +106,7 @@ Na rozdíl od kartáčových motorů je komutace PMS motorů řízena elektronic
 
  \sec Matematický popis
  
- Pro matematický popis dějů v~PMS motorech a vláště pak pro \uv{Sensorless} řízení jsou vhodným nástrojem Clarkova a Parkova tranformace. Jejich použití je uvedeno v~této sekci.
+ Pro matematický popis dějů v~PMS motorech a vláště pak pro implementaci plného momentového řízení jsou vhodným nástrojem Clarkova a Parkova tranformace. Ty jsou využity k vytvoření modelu použitého třífázového motoru (točivého elektrického stroje) který je uveden dále v této sekci.
  
  \secc Clarkova transformace
  
@@ -118,17 +120,20 @@ Na rozdíl od kartáčových motorů je komutace PMS motorů řízena elektronic
  
  $$ \overline{i} = i_{a}+\hat{a}i_{b}+\hat{a}^2i_{c} \eqmark$$
  
- kde $\hat{a}$ a $\hat{a}^2$ jsou operátory posouvajíci fázi o~$\delta=120^{\circ}={2\pi\over3}rad$. Operátory mají podobu: $ \hat{a}=e^{j\delta} $ a $\hat{a}^2=e^{2j\delta}$. Po jejich dosazení je možné psát:
+ kde $\hat{a}$ a $\hat{a}^2$ jsou operátory posouvající fáze o~$\delta=120^{\circ}={2\pi\over3}rad$. Operátory mají podobu: $ \hat{a}=e^{j\delta} $ a $\hat{a}^2=e^{2j\delta}$. Po jejich dosazení je možné psát:
 
- $$ \overline{i} = i_{a}+i_{b}e^{j\delta}+i_{c}e^{2j\delta} \eqmark$$
- $$ \label[rce_cplx]\overline{i} = i_{a}+i_{b}(\cos{\delta}+j\sin{\delta})+i_{c}(\cos{\delta}+j\sin{\delta}) \eqmark$$
- 
- 
+ $$ 
+ \overline{i} = i_{a}+i_{b}e^{j\delta}+i_{c}e^{2j\delta} \eqmark$$
+  %Použijeme Eulerův vzorec $e^{j\phi}=\cos{\phi} + j\sin{\phi}$:
+ $$ \label[rce_cplx]\overline{i} = i_{a}+i_{b}(\cos{\delta}+j\sin{\delta})+i_{c}(\cos{2\delta}+j\sin{2\delta}) \eqmark
+ $$
  $\overline{i}$ můžeme vyjádřit jako součet jeho reálné a imaginární složky:
 
- $$ \overline{i}=i_{\alpha}+ji_{\beta} \eqmark$$
+ $$
+  \overline{i}=i_{\alpha}+ji_{\beta} 
+  \eqmark$$
  
- Z~rovnice \ref[rce_cplx] tak možné napsat maticové vyjádření Clarkovy transformace:
+ Z~rovnice \ref[rce_cplx] je tak možné napsat maticové vyjádření Clarkovy transformace:
  
  $$
  \label[clark_matrix_rce]
@@ -175,7 +180,7 @@ u_{a}=R_si_{a}+{{d}\over{dt}}\psi_{a} \eqmark$$
 $$ u_{b}=R_si_{b}+{{d}\over{dt}}\psi_{b} \eqmark$$
 $$ u_{c}=R_si_{c}+{{d}\over{dt}}\psi_{c} \eqmark$$
 
-kde $\psi_{a}$,$\psi_{b}$ a $\psi_{c}$ jsou magnetické indukční toky vyvolané proudy odpovídajících vinutí. Vyjádření napětí vektorem v~Gaussově(komplexní) rovině (Clarkova transformace) odpovídá:
+kde $\psi_{a}$,$\psi_{b}$ a $\psi_{c}$ jsou magnetické indukční toky vyvolané proudy odpovídajících vinutí. Vyjádření napětí vektorem v~Gaussově (komplexní) rovině (Clarkova transformace) odpovídá:
 
  $$ u_{\alpha}=R_si_{\alpha}+{{d}\over{dt}}\psi_{\alpha} \eqmark$$
  $$ u_{\beta}=R_si_{\beta}+{{d}\over{dt}}\psi_{\beta} \eqmark$$
@@ -187,12 +192,12 @@ kde $\psi_{a}$,$\psi_{b}$ a $\psi_{c}$ jsou magnetické indukční toky vyvolan�
  
  kde $\theta$ je úhlová pozice rotoru a $\psi_M$ je magnetický indukční tok rotoru. $L_{\alpha}$ a $L_{\beta}$ jsou složky vzájemné indukčnosti rotor-stator.  
 
-Úhlové zrychlení takového motoru o~zátěži $T_L$ s~$p$ póly připadajícími na každou fázi můžeme vyjádřit jako:
+Úhlové zrychlení takového motoru s momentem setrvačnosti $J$ o~zátěži $M_L$ s~$p$ póly připadajícími na každou fázi můžeme vyjádřit jako:
 
 $$
 \label[rce2]
 {d\omega\over{dt}}=
-{p\over{j}}\lbrack{3\over{2}}p(\psi_{\alpha}i_{\beta}-\psi_{\beta}i_{\alpha})-T_L\rbrack
+{1\over{J}}\lbrack{3\over{2}}p(\psi_{\alpha}i_{\beta}-\psi_{\beta}i_{\alpha})-M_L\rbrack
 \eqmark
 $$
 
@@ -218,34 +223,7 @@ $$ \label[park_cplx_rce]
 \overline{i}_r=i_d+ji_q=(i_{\alpha} + ji_{\beta})(\cos{\theta} - j\sin{\theta})
  \eqmark$$ 
 
-Napětí je tak možné přepsat jako:
-
-$$u_{d}=R_si_{d}+{d\over{dt}}\psi_{d}-\omega_r\psi_{q} \eqmark $$
-$$u_{q}=R_si_{q}+{d\over{dt}}\psi_{q}-\omega_r\psi_{d} \eqmark $$
-
-kde $\omega_r$ je úhlová rychlost rotoru. $\psi_d$ a $\psi_q$ jsou složky magnetického indukčního toku statoru vyjádřeného v~{\em dq0} souřadném systému. 
-
-Jednotlivé složky je možné vyjádřit: 
-
- $$\psi_{d} = L_{d}i_{d} + \psi_M \eqmark$$
- $$\psi_{q} = L_{q}i_{q} \eqmark$$
- 
-Úhlové zrychlení v~{\em dq0} souřadném systému \cite[PMSMC]: 
- 
-$$
-\label[rce3]
-{d\omega\over{dt}}=
-{p\over{j}}\lbrack{3\over{2}}p(\psi_{d}i_{d}-\psi_{q}i_{q})-T_L\rbrack
-\eqmark
-$$
-
-\medskip \clabel[park]{Parkova transformace}
-\picw=8cm \cinspic StatorCurrents.pdf
-\caption/f Parkova transformace 
-\medskip
-
   Pomocí rovnice \ref[park_cplx_rce] je možné vyjádřit také maticový tvar Parkovy transformace:
-
   $$
   \label[rce_park]
   \left[\matrix{i_{d} \cr
@@ -261,20 +239,70 @@ $$
     \eqmark
     $$
 
+Složky napětí v {\em dqo} souřadném systému je možné přepsat jako:
+$$u_{d}=R_si_{d}+{d\over{dt}}\psi_{d}-\omega\psi_{q} \eqmark $$
+$$u_{q}=R_si_{q}+{d\over{dt}}\psi_{q}-\omega\psi_{d} \eqmark $$
+
+ Symbol $\omega$ je úhlová rychlost rotoru. $\psi_d$ a $\psi_q$ jsou složky magnetického indukčního toku statoru vyjádřeného v~{\em dq0} souřadném systému. 
+
+Jednotlivé složky je možné vyjádřit: 
+
+ $$\label[psi_d_rce] \psi_{d} = L_{d}i_{d} + \psi_M \eqmark$$
+ $$\label[psi_q_rce] \psi_{q} = L_{q}i_{q} \eqmark$$
+ 
+\medskip \clabel[park]{Parkova transformace}
+\picw=8cm \cinspic StatorCurrents.pdf
+\caption/f Parkova transformace 
+\medskip 
+ 
+Úhlové zrychlení motoru s momentem setrvačnosti $J$ o~zátěži $M_L$ s~$p$ póly připadajícími na každou fázi můžeme v v~{\em dq0} souřadném systému vyjádřit jako\cite[PMSMC]: 
+
+$$
+\label[rce3]
+{d\omega\over{dt}}=
+{1\over{J}}\lbrack{3\over{2}}p(\psi_{d}i_{q}-\psi_{q}i_{d})-M_L\rbrack
+\eqmark
+$$
+ 
+
+Po dosazení za $\psi_d$ a $\psi_q$ z rovnic \ref[psi_d_rce] a \ref[psi_q_rce] do \ref[rce3] dostáváme:
+
+
+$$
+{d\omega\over{dt}}=
+{1\over{J}}\lbrack{3\over{2}}p(\psi_Mi_q+(L_d-L_q)i_{q}i_{d})-M_L\rbrack
+\eqmark
+$$
+
+Točivý moment $M$ motoru tak vypadá následovně:
+
+$$
+M={3\over{2}}p(\psi_Mi_q+(L_d-L_q)i_{q}i_{d})
+\eqmark
+$$
+
+Za předpokladu $i_{d}=0$, pak dojde ke zjednodušení:
+$$
+\label[ctrl_rce]
+M={3\over{2}}p\psi_Mi_q
+\eqmark
+$$
+Z rovnice \ref[ctrl_rce] vyplývá, že točivý moment motoru je možné libovoně řídit, jen nastavením hodnoty $i_q$ \cite[torque_ctrl] \cite[nlin_torq_ctrl]. Procesem, jak z $i_q$ vypočítat proudy jednotlivými fázemi se zabývá sekce \ref[rizeni_sec]. Implementace možného řešení je v sekci \ref[vektor_impl_sec].
+
+
 \label[rizeni_sec]
  \sec Řízení
  
- PMS Motory se vyznačují plynulou rychlostí v~celém rozsahu rotace a schopností plně řídit točivý moment i při nulové rychlosti. K~tomu se využívaji techniky vektorového řízení. Ty rozloží proud protékající vinutím statoru na složky generující magnetické pole a točivý moment. Tyto složky pak můžeme řídit na sobě nezávisle a přiblížit se tak řízení obyčeného kartáčového DC motoru \cite[PMSMC]. Metematickým nástrojem jsou Clarkova a Parkova transformace popsané výše v~této kapitole.
+ PMS Motory se vyznačují plynulou rychlostí v~celém rozsahu otáčení a schopností plně řídit točivý moment i při nulové rychlosti. K~tomu se využívaji techniky vektorového řízení. 
  
- V~této práci je implementovávo poziční řízení využívající sktečnosti, že největší momentové účinky vyvolává proud protékající fázemi za přepokladu, že vektor mg. indukce jím vyvolaného mg. pole svírá pravý úhel s~vektorem mg. indukce mg. pole permanentního magnetu. Cílem řízení je tedy mimo jiné zaručit, aby tato kolmost nastala.
+ S jejich pomocí je možné rozložit proud protékající vinutím statoru na složky generující magnetické pole a točivý moment. Tyto složky pak můžeme řídit na sobě nezávisle a přiblížit se tak v jednoduchosti řízení standartního kartáčového DC motoru \cite[PMSMC]. 
  
- Tuto podmínku je možné zaručit, pokud kopmlexní vektor proudu $\overline{i}$ bude rovnoběžný s~osou $q$ Parkovy tarnsformace. Má-li směr stejný, motor se bude otáčet po směru hodinových ručiček. Při směru opačném dode k~opačnému pohybu.
- 
- Matematickým nástrojem, jak tohoto dosáhnou jsou inverzní Parkova a Clarkova transformace. Pro názornost jsou zde uváděny v~maticovém tvaru.
+  V~této práci je implementovávo poziční řízení s možností rozšíření na plné momentové řízení. Z rovnice \ref[ctrl_rce] vyplývá, že pro poziční a momentové řízení je nutné modifikovat pouze složku $i_q$ komplexního vektoru proudu $\overline{i}$.
+
+ Matematickým nástrojem, jak přepočítat $i_q$ na statorové proudy $i_a$, $i_b$ a $i_c$ jsou inverzní Parkova a Clarkova transformace, kterým je věnován zbytek této sekce. Implementace možného řešení je popsána v sekci \ref[vektor_impl_sec]. Pro názornost jsou zde obě transformace uváděny v~maticovém tvaru.
   \secc Inverzní Parkova transformace
   
-  Maticový tvar dopředné Parkovy transformace je uveden v~rovnici \ref[rce_park]. Transformační matice je regulární a je tedy možné jednoduše vytvořit její inverzi:
-    
+    Maticový tvar dopředné Parkovy transformace je uveden v~rovnici \ref[rce_park]. Transformační matice je regulární a je tedy možné jednoduše vytvořit její inverzi:
    $$
    \label[inv_clark_rce]
   \left[\matrix{i_{\alpha} \cr
@@ -289,9 +317,6 @@ $$
     }\right]
     \eqmark
     $$
-   
-      
-  
     
     V~případě, že je úhel odečítán opačným směrem, než je v~matematice obvyklé (obvyklý směr je proti chodu hodinových ručiček), je možné do rovnic dosadit $\theta=-\vartheta$. 
   $$
@@ -308,6 +333,7 @@ $$
     }\right]
     \eqmark
     $$    
+    
     Tento případ se týká i řešení použitého v~této práci.
  
 
@@ -317,7 +343,6 @@ $$
 Nyní jsou již k~dispozici hodnoty $i_{\alpha}$ a $i_{\beta}$, k~jejich přepočtení na jednotlivé fáze slouží inverzní Clarkova transformace.  
 
 Vytvořit inverzi k~transformační matici v~rovnici \ref[clark_matrix_rce] není možné. Je tedy nutné rozšířit transformaci o~osu $\gamma$. Proud v~této ose označme $i_{\gamma}$ a definujme $i_{\gamma}=z( i_{a} + i_{b} + i_{c})$.
- 
  $$
   \left[\matrix{i_{\alpha} \cr
                 i_{\beta} \cr
@@ -334,9 +359,8 @@ Vytvořit inverzi k~transformační matici v~rovnici \ref[clark_matrix_rce] nen�
     }\right]
     \eqmark
     $$
- 
-Tímto způsobem byla transformační matice rozšířenana velikost 3x3. Matice je regulární a je tak možné vytvořit matici inverzní a celé inverzní zobrazení.
-
+    
+Tímto způsobem byla transformační matice rozšířenana velikost 3x3. Matice je pro $z\not=0$ a $k\not=0$ regulární, je tak možné vytvořit matici inverzní a celé inverzní zobrazení.
  $$
    \left[\matrix{i_{a} \cr
                 i_{b} \cr
@@ -353,10 +377,8 @@ Tímto způsobem byla transformační matice rozšířenana velikost 3x3. Matice
     }\right]
     \eqmark 
     $$
- 
- Pokud je transformační konstanta rovna $k={2\over{3}}$, nedochází k~zesílení požadovaných proudů. Konstanta $z$ bývá z~estetických důvodů volena $z={1\over2}$. Pokud do takto zvolených konstant dosadíme a vyčíslíme též $\delta=120^{\circ}={2\pi\over3}rad$, bude rovnice vypadat:
-
-  
+    
+ Pokud je transformační konstanta rovna $k={2\over{3}}$, nedochází k~zesílení požadovaných proudů. Konstanta $z$ bývá z~estetických důvodů volena $z={1\over2}$. Po dosazení do takto zvolených konstant  vyčíslení $\delta=120^{\circ}={2\pi\over3}rad$, bude rovnice vypadat:
    $$
    \label[inv_clark_num_rce]
    \left[\matrix{i_{a} \cr
@@ -374,7 +396,7 @@ Tímto způsobem byla transformační matice rozšířenana velikost 3x3. Matice
     }\right]
     \eqmark 
     $$
- 
+    
  Zde je nutné připomenout, že z~rovnice \ref[soucet_nula_rce] vyplývá:  $i_{\gamma}=z( i_{a} + i_{b} + i_{c}) = 0 $.
  
  \chap Popis hardware
@@ -390,9 +412,9 @@ Tímto způsobem byla transformační matice rozšířenana velikost 3x3. Matice
 \caption/f Použitý motor 
 \medskip  
  
-  V~motoru jsou integrovány Hallovy sondy, které snímají absolutní polohu motoru ve 12 úsecích mechanického plného kruhu. Při přechodu mezi dvěma úseky se mění práve jeden z~výstupních signálů těchto senzorů. V~místech přechodu je tedy možné určit pozici motoru relativně přesně.
+  V~motoru jsou integrovány Hallovy sondy, které snímají absolutní polohu motoru ve 12 úsecích mechanického plného úhlu. Při přechodu mezi dvěma úseky se mění práve jeden z~výstupních signálů těchto senzorů. V~místech přechodu je tedy možné určit pozici motoru relativně přesně.
   
-   Do motoru je přivedeno celkem 8 vodičů ve dvou svazcích. Ve svazku o~třech vodičích jsou přivedeny fáze, v~ostatních je pak napájení a výstup hallových senzorů, viz. Tabulka \ref[vodice_tab]. V~Tabulce \ref[motor_tab] jsou pak uvedeny technické parametry motoru.
+   Do motoru je přivedeno celkem 8 vodičů ve dvou svazcích. Ve svazku o~třech vodičích jsou přivedeny fáze, v~ostatních je pak napájení a výstup Hallových senzorů, viz. Tabulka \ref[vodice_tab]. V~Tabulce \ref[motor_tab] jsou pak uvedeny technické parametry motoru.
 
  \medskip \clabel[motor_tab]{Parametry použitého motoru}
 \ctable{lll}{ 
@@ -427,7 +449,7 @@ Tímto způsobem byla transformační matice rozšířenana velikost 3x3. Matice
 \caption/t Vodiče přivedené do motoru 
 \medskip 
   
-  K~motoru je též z~jedné strany namontován inkrementální rotační čítač (dále jen \glref{IRC}), který měří přírůstky polohy motoru vůči pozici při startu řízení. Jeho výhodou je vysoká přesnost.  Zatímco Hallovy sondy dokáží rozlišit jen mezi 12 polohami na jednu mechanickou otáčku, použitý IRC rozezná 2000 samostatných bodů (běžné hodnoty rozlišení tohoto typu senzorů se pohybují v~rozmezí 16 až 10000 bodů na otáčku). K~IRC vedou vodiče napájení a signálů s~daty o~poloze. Dva z~nich jsou signály, které ze svých aktuálních stavů a jejich změn poskytují informaci o~pohybu motoru a jeho směru. Třetí signál pak vyšle puls vždy jen v~jedné pozici za jednu mechanickou otáčku motoru. Poskytuje tak absolutní polohu.
+  K~motoru je též z~jedné strany namontován inkrementální rotační čítač (dále jen \glref{IRC}), který měří přírůstky polohy motoru vůči pozici při startu řízení. Jeho výhodou je vysoká přesnost.  Zatímco Hallovy sondy dokáží rozlišit jen mezi 12 polohami na jednu mechanickou otáčku, použitý IRC rozezná 2000 samostatných pozic (běžné hodnoty rozlišení tohoto typu senzorů se pohybují v~rozmezí 16 až 10000 bodů na otáčku). K~IRC vedou vodiče napájení a signálů s~daty o~poloze. Dva z~nich jsou signály, které ze svých aktuálních stavů a jejich změn poskytují informaci o~pohybu motoru a jeho směru. Třetí signál pak vyšle puls vždy jen v~jedné pozici za jednu mechanickou otáčku motoru. Poskytuje tak absolutní polohu.
   
  
 
@@ -437,7 +459,9 @@ Tímto způsobem byla transformační matice rozšířenana velikost 3x3. Matice
  
  Raspberry Pi je jednodeskový počítač založený na rodině architektury ARM, který se v~současnosti dodavá v~několika variantách.
  
- Základem první verze tohoto minipočítače je \glref{SoC} BCM2835, který obsahuje centrální procesor ARM1176JZF-S s~taktem 700 MHz, grafický procesor VideoCore IV a 256 MB nebo 512 MB  paměti RAM. Neumožňuje však připojení pevného disku. Operační systém a data, která mají být uchována i po restartu zařízení je třeba uložit na SD kartu, jejíž slot je k~dispozici. Protože procesorová jednotka typu ARM11 využíva poměrně zastaralou architekturu ARMv6 s~nedostatečnou hardwarovou podporou pro výpočty v~polovoucí řádové čárce  \glref{VFP}v2 \cite[ARM11] \fnote{ARM11 Online Technical Reference Manual \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0301h/Cegdejjh.html}}, je nutná rekompilace distribuce systému Debian/Raspbian. Oficiální port této distribuce ARMhf totiž vyžaduje alespoň architektutu ARMv7 s~koprocesorem pro výpočty v~plovoucí řádové čárce nejméně ve verzi VFPv3-D16. \fnote{Debian, List of official ports \url{https://www.debian.org/ports/}}
+ Základem první verze tohoto minipočítače je \glref{SoC} BCM2835, který obsahuje centrální procesor ARM1176JZF-S s~taktem 700 MHz, grafický procesor VideoCore IV a 256 MB nebo 512 MB  paměti RAM. Neumožňuje však příme připojení pevného disku pomocí SATA a neobsahuje ani jinou trvalou integrovanou velkokapacitní paměť (MTD). Operační systém a data, která mají být uchována i po restartu zařízení je tak třeba uložit na SD kartu, jejíž slot je k~dispozici.
+ 
+  Procesorová jednotka typu ARM11 využíva poměrně zastaralou architekturu ARMv6 se statší verzí jednotky pro výpočty v plovoucí řádové čárce \glref{VFP}v2 \cite[ARM11] \fnote{ARM11 Online Technical Reference Manual \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0301h/Cegdejjh.html}},která již není podporovaná sestavením systému Debian pro moderní zařízení s procesorem ARM. Proto je nutná rekompilace distribuce systému Debian/Raspbian. Oficiální port této distribuce ARMhf totiž vyžaduje alespoň architektutu ARMv7 s~koprocesorem pro výpočty v~plovoucí řádové čárce nejméně ve verzi VFPv3-D16. \fnote{Debian, List of official ports \url{https://www.debian.org/ports/}}
  
 \medskip \clabel[RPiB+]{Raspberry Pi v1 model B+}
 \picw=8cm \cinspic Raspberry_Pi_B+_top.png
@@ -470,14 +494,14 @@ Nevýhodou použitých SoC v~obou verzích je chybějící integrovaná podpora 
  \label[sec_rt]
  \sec Jádro Linux a jeho použitelnost pro RT aplikace
  
- Linux je víceuživatelský, víceúhlový operační systém založený na stejnojmenném jádře, které vyvinul v~roce 1991 Linus Thorvadls. S~vylepšením zaručující maximální čas odezvy na vnější události se stává zajímavou volbou i pro některé řídicí aplikace.
+ Linux je víceuživatelský, víceúhlový operační systém založený na stejnojmenném jádře, které vyvinul v~roce 1991 Linus Thorvadls. Po aplikaci úprav pro zaručení kontrolovaného času odezvy na vnější události (RT-rozšíření) se stává zajímavou volbou i pro některé řídicí aplikace.
  
  Systém, který byl původně myšlen spíše jako koníček se postupem času vyvinul z~pouhého emulátoru terminálu v~jeden z~nejpoužívanějších na světě. Dnes mají Linuxové distribuce 97\% zastoupení mezi největšími superpočítači \fnote{Linux dominates supercomputers \url{http://www.zdnet.com/article/linux-dominates-supercomputers\|-as-never-before}} a například systém Android, s~Linuxovým jádrem, běží na 47\% všech smartphonů a tabletů \fnote{Mobile/Tablet Operating System Market Share \url{http://marketshare.hitslink.com/operating\|-system-market-share.aspx?qprid=8&qptimeframe=M&qpcustomd=1}}. Mohutný rozmach systému byl zapříčiněn mimo jiné zveřejněním jeho zdrojového kódu pod svobodnou licencí. To umožnilo na jeho vývoji pracovat tisícům dobrovolníků a mnoha korporacím, mezi které patří například Red Head, Intel, Samsung či Google \fnote{Who actually develops Linux? \url{http://www.extremetech.com/computing/175919-who-actually-\|develops-linux-the-answer-might-surprise-you}}.
  
  
  Pro široké možnosti svého využití a jednoduché vzdálené správy si systém brzy získal oblibu mezi vyvojáři. Doménou řídicích aplikací však dále zůstavaly menší systémy. Linux se tak stával součástí jen větších celků, kde za odezvu k~kritických částech byl zodpovědný \glref{RT} OS a Linux plnil spíše administrativní funkce. Vývoj plikací pro menší RT OS však přinaší mnoho komplikací navíc, přikladem je spíše minimalistické \glref{API} a často nedostatečná podpora některých komunikačních protokolů. Vznikl tak projekt, jehož cílem bylo upravit linuxové jadro způsobem, který umožní včasné přeplánování a zajistí tak splnění časových požadavků vyžadovaných řízením. 
  
- Projekt KURT (Kansas University Real Time) se stal průkopníkem, když využil podporu Linuxu pro víceprocesorové systémy (\glref{SMP}) a rozšířil možnost souběhu procesů při zpracování systémových volání v~jádře, což jádro dříve v~plné míře nedovolovalo. Serializace takových úseků, ve kterých se v~danou chvíli směl nacházet jen jeden procesor je pak řešena zámky s~aktivním čekáním (spin-lock). Ostatní úseky kódu s~nutností vyloučení vzájemného  souběhu namísto spin-locků začaly využívat RT-mutex. Další snaha byla minimalizovat či přepracovat části kódu, které neumožňují preempci, jako například obslužné rutiny přerušení. Důležitá je implementace dědění priorit.  \cite[preemption] \cite[rychlost_odezvy] 
+ Projekt KURT (Kansas University Real Time) se stal průkopníkem, když využil podporu Linuxu pro víceprocesorové systémy (\glref{SMP}) a rozšířil možnost souběhu procesů při zpracování systémových volání v~jádře, což jádro dříve v~plné míře nedovolovalo. Serializace takových úseků, ve kterých se v~danou chvíli směl nacházet jen jeden procesor je pak řešena zámky s~aktivním čekáním (spin-lock). Ostatní úseky kódu s~nutností vyloučení vzájemného  souběhu namísto spin-locků začaly využívat RT-mutex. Další snaha byla minimalizovat či přepracovat části kódu, které neumožňují preempci, jako například obslužné rutiny přerušení. Důležitá je implementace dědění priorit. \cite[rychlost_odezvy]  \cite[preemption] 
  
  Vzhledem k~rozsáhlosti zdrojového kódu systému Linux není možné analyticky spočítat veškerá zpoždění a vyhodnotit tak maximální latenci systému a časy potřebné k~přeplánování. Podobný výpočet by navíc nebyl možný při použití rozmanitých vyrovnávacích pamětí a víceprocesorových systémů. Pro mnoho aplikací je však dostačující znát průběhy zpoždění měřeného na zatíženém systému v~delším časovém období - řádově v~měsících. Těmito testy a také dalším vývojem RT vlastností Linuxu se zabývá laboratoř OSADL \fnote{OSADL \url{http://www.osadl.org/}}. 
  
@@ -493,9 +517,11 @@ FPGA se v~současnosti využívají v~mnoha aplikacích. Těží tak svých vlas
 
 Pro tuto práci byl vybrán FPGA obvod od společnosti {\em Microsemi Corporation} \fnote{Microsemi Corporation \url{http://www.microsemi.com/}} z~rodiny IGLOO. Konkrétně čip AGL125 v~pouzdře VQ100. Tato jednotka obsahuje 125 tisíc hradel a nabízí mimo jiné 36 kbits RAM. Podporuje In System Programming (\glref{ISP}) a lze naprogramovat prostřednictvím rozhraní \glref{JTAG} \cite[AGL125]. 
 
-Na rozdíl od větších a výkonnějších obvodů Xilinx a Altera zde dochází k~uložení konfigurace přímo do obvodu a neni ji tak třeba nahrávat z~externi FLASH či z~CPU. Taktéž poměr ceny a kvality produktu je příznivý. Pro inicializaci hodnot v~obvodu při zapnutí napájení pak může být využit externí signál. Výhodným řešením může být i využití resetu z~bloku fázového závěsu. Bez implementace tohoto mechanismu je ale třeba brát na zřetel hrozbu inicicializace na nevhodné hodnoty. Přikládem jsou signály pro ovládání polovičních H-můstků, které, při inicializaci na logickou jedničku mohou zapříčinit přehřátí a zničení motoru.  
+Na rozdíl od větších a výkonnějších obvodů Xilinx a Altera zde dochází k~uložení konfigurace přímo do obvodu a není ji tak třeba nahrávat z~externí FLASH či z~CPU. Taktéž poměr ceny a kvality produktu je příznivý. Pro inicializaci hodnot v~obvodu při zapnutí napájení pak může být využit externí signál. Výhodným řešením může být i využití resetu z~bloku fázového závěsu (PLL), které je implementováno i v této práci. Bez implementace tohoto mechanismu je ale třeba brát na zřetel hrozbu inicicializace na nevhodné hodnoty. Přikládem jsou signály pro ovládání polovičních H-můstků, které, při inicializaci na logickou jedničku mohou zapříčinit přehřátí a zničení motoru.  
 
-Návrh byl vytvořen v~HDL jazyce VHDL. Jazyk VHLD slouží jak k~popisu a následné syntéze obvodu v~programovatelném hradlovém poli, tak k~simulacím. Používá se také pro popis obvodů, které se podle návrhu ve VHDL později přímo vyrobí.  Standardizován byl v~r. 1987. Jako jazyk vyvinutý z~přísně typového jazyka Ada si pak ponechává některé jeho vlastnosti, které se s~výhodou využijí při popisu hardware. Výhodou jazyka Ada, tedy i VHDL, je zabudovaná možnost souběžného výkonávání kódu. Tato funkce se totiž plně využije právě při navrhování hardware, kde je souběžné vykonávání elementární záležitostí. Vznikají tak bloky {\em Process}, které po příchodu spouštěcího signálu pracují zcela paralelně. 
+Návrh byl vytvořen v~HDL jazyce VHDL. Jazyk VHLD slouží jak k~popisu a následné syntéze obvodu v~programovatelném hradlovém poli, tak k~simulacím. Používá se také pro popis obvodů, které se podle návrhu ve VHDL později přímo vyrobí.  Standardizován byl v~r. 1987. Jako jazyk vyvinutý z~přísně typového jazyka Ada si pak ponechává některé jeho vlastnosti, které se s~výhodou využijí při popisu hardware. 
+
+Mezi tyto výhody patří zabudovaná možnost souběžného výkonávání kódu. Tato funkce se totiž plně využije právě při navrhování hardware, kde je souběžné vykonávání elementární záležitostí. Vznikají tak bloky {\em Process}, které po příchodu spouštěcího signálu pracují zcela paralelně. 
 
 \sec Syntéza VHDL kódu a programování FPGA
 
@@ -963,6 +989,7 @@ Takto použité volání zajistí, že nedojde v~výpadku žádné stránky, kte
 
 Jak bylo uvedeno výše, PMS motory nevyužívají ke komutaci mechanické kartáče, Komutace je zde řízena elektronicky. Komutaci je možné provádět několika způsoby v~závislosti na informacích o~stavu motoru, které máme k~dispozici. Popisem těchto variant se zabývá právě tato sekce.
 
+\label[hall_only_sec]
 \secc Komutace s~využitím pouze Hallových sond
 
 Pokud není k~dispozici absolutní poloha motoru, není možné řídit komutaci pomocí výstupu z~IRC senzoru. V~takovém připadě je realizován nejjednodušší způsob komutace, pouze za použití výstupu z~Hallových sond.
@@ -997,6 +1024,7 @@ if (hal2 && !hal3){
 
 Velkou nevýhodou této komutace je kolísání točivého momentu v~závislosti na úhlu natočení rotoru. Dochází tak k~nepříjemnému otřásání motoru.
 
+\label[120_sec]
 \secc Komutace pomocí přičítání 120 stupňů
 
 Pokud je k~dispozici absolutní poloha rotoru v~rámci celého elektrického úhlu s~dostatečnou přesností, je možné právádět komutaci tak, aby točivý moment zůstával konstantní v~průběhu celé otáčky.
@@ -1021,6 +1049,7 @@ if (pwm3<0) pwm3=0;
 
 Kde "pxmc_sin_fixed_inline" je funkce z~knihovny {\em PXMC}, která celočíselně, s~přesností 10 bitů, počítá hodnotu sinu. Proměnná "pos" udává úhlovou pozici rotoru. 
 
+\label[vektor_impl_sec]
 \secc Vektorové řízení
 
 Vektorový řízení využívá pro výpočet proudu jednotlivými fázemi Clarkovu a Parkovu inverezní transformaci. S~jejich pomocí je možné řídit směr pohybu rotoru pouze řízením složky proudu rovnoběžné s~osou {\em q} v~{\em dq0} souřadném systému. Tato metoda je popsána v~sekci \ref[rizeni_sec]. 
