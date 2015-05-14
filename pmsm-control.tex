@@ -673,7 +673,7 @@ Protože jednotlivé módy jsou kvalitativně rovnocené, výběr jednoho z~nich
 
 \secc Zdroj hodinového signálu pro FPGA
 
-Jak již bylo řečeno, hodinový signál generovaný při použití protokolu SPI trvá jen po dobu přenosu dat. Zdrojem hlavního hodinového signálu pro FPGA obvod se tak stal generátor hodinových pulzů na RPi, jehož výstup je možné přivést na jeden ze vstupně/výstupních pinů. Jeho frekvence byla stanovena na 50MHz. Dále v~textu bude tento signál označen stejně, jako ve VHDL kódu, tedy "gpio_clk". 
+Jak bylo uvedeno výše, hodinový signál generovaný při použití protokolu SPI trvá jen po dobu přenosu dat. Zdrojem hlavního hodinového signálu pro FPGA obvod se tak stal generátor hodinových pulzů na RPi, jehož výstup je možné přivést na jeden ze vstupně/výstupních pinů. Jeho frekvence byla stanovena na 50MHz. Dále v~textu bude tento signál označen stejně, jako ve VHDL kódu, tedy "gpio_clk". 
 
 \label[spi_slave_sec]
  \secc SPI slave v~FPGA obvodu
@@ -730,12 +730,12 @@ Tento postup se opakuje až do deaktivace signálu "SE".
  
  Druhým argumentem funkce "int ioctl(int d, int request, ...)" je request kód. Jedná se o~kód specifický pro každou operaci s~daným zařízením zvlášť. Posledním argumentem je ukazatel (pointer) na datovou strukturu specifickou pro daný příkaz. Datový typ ukazatele není striktně určen. Konvence však, tam, kde není uvedeno jinak, doporučuje volit "char * argp" \cite[ioctl_man].
  
- Jako první je třeba nastavit mód SPI, to je provedeno s~kódem operace "SPI_IOC_WR_MODE" následovně:
+ Jako první je třeba nastavit mód SPI, to je provedeno s~kódem operace definovaným makrem "SPI_IOC_WR_MODE" následovně:
   \begtt
   unsigned char mode = 0;
   int ret = ioctl(fd, SPI_IOC_WR_MODE, &mode);\endtt
   
- Dále délku slova, využijeme "SPI_IOC_WR_MODE":
+ Dále je nutné stanovit délku slova, využijeme "SPI_IOC_WR_MODE":
  \begtt
  unsigned char bits = 8;
  ret = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bits);\endtt
@@ -746,27 +746,35 @@ Tento postup se opakuje až do deaktivace signálu "SE".
  unsigned int speed = 500000;
  ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);\endtt
   
-  Nyní je zařizení SPI plně nakonfigurováno a může začít přenos dat. Nejdrříve je nutné nastavit parametry specifické pro daný přenos, vyplnit ukazatel na úsek paměti s výstupními daty ("tx") a ukazatel na oblast připravenou pro uložení vstupních dat ("rx").Ten je proveden z~využitím struktury "spi_ioc_transfer":
-  \ttline+9 
-  \begtt
-  struct spi_ioc_transfer tr = 
-  {
-		.tx_buf = (unsigned long)tx,
-		.rx_buf = (unsigned long)rx,
-		.len = 16,
-		.delay_usecs = 0,
-		.speed_hz = speed,
-		.bits_per_word = bits,
-  };\endtt
-  , kde "tx" je pointer na odesílaná a "rx" na příjmaná data, jejichž délka musí odpovídat velikosti vyměněných dat: 
+  Před samotným přenosem je ještě nutné nastavit parametry specifické pro daný přenos, vyplnit ukazatel na úsek paměti s výstupními daty ("tx") a ukazatel na oblast připravenou pro uložení vstupních dat ("rx").
  \ttline+7  
   \begtt
   unsigned char rx[16];
   unsigned char tx[16];\endtt
+    
+ Parametry jsou uloženy ve struktuře "spi_ioc_transfer":
+\ttline+9 
+\begtt
+struct spi_ioc_transfer tr = 
+{
+    .tx_buf = (unsigned long)tx,
+    .rx_buf = (unsigned long)rx,
+    .len = 16,
+    .delay_usecs = 0,
+    .speed_hz = speed,
+    .bits_per_word = bits,
+};\endtt
+ 
+ Přenos je spuštěn opět voláním IOCTL, s kódem operace "SPI_IOC_MESSAGE(1)". 
+\begtt
+ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);\endtt
+
+Po jeho úpěšném průběhu je možné již používat doručená data v paměti odkazované ukazatelem "rx".
+
 
 \secc Pořadí dat v~přenosu
  
-  Prvním přenášeným bitem komunikace je bit s~nejvyšší hodnotou (MSB), tedy bit "dat_reg(127)" na straně FPGA. Za předpokladu, že data pro přenos jsou v~Raspberry uchovávána v~poli charů a odpadnou tak problémy s~endianitou (instrukce ARMv6 jsou defaultně little-endian \fnote{ARMv6 Support for mixed-endian data \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0301h/Cdfbbchb.html}}), bude prvním přenášeným bitem MS bit v~"tx[0]". Funkce bitů v~přenosech z~Raspberry do FPGA a v~opačném směru ukazují Tabulka \ref[data_order1_tab] a Tabulka \ref[data_order2_tab].
+  Prvním přenášeným bitem komunikace je bit s~nejvyšší hodnotou (MSB), tedy bit "dat_reg(127)" na straně FPGA. Za předpokladu, že data pro přenos jsou v~Raspberry uchovávána v~poli charů a odpadnou tak problémy s~endianitou (instrukce ARMv6 jsou defaultně little-endian \fnote{ARMv6 Support for mixed-endian data \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0301h/Cdfbbchb.html}}), bude prvním přenášeným bitem MS bit v~"tx[0]". Pozice a funkce bitů v~přenosech z~Raspberry Pi do FPGA a v~opačném směru jsou zdokumentované v tabulce \ref[data_order1_tab] a \ref[data_order2_tab].
   
  \medskip \clabel[data_order1_tab]{Pořadí dat v~přenosu}
 \ctable{ccc}{ 
@@ -803,29 +811,34 @@ Tento postup se opakuje až do deaktivace signálu "SE".
   \label[adc_sec]
  \sec Čtení hodnot z~AD převodníku 
  
-Znalost proudů tekoucích jednotlivými fázemi motoru je nutná k~tzv. Sensorless řízení a je součástí i dalších výpočtů. 
+Měření  statorových proudů je nutné k plnému momentovému řízení nebo k řízení bez polohových senzorů (sensorless control). 
 
-V~plošném spoji výkonového stupně {\em 3P-MOTOR-DRIVER-1} je proto integrován čtyřkanálový, 12-bitový AD převodník ADS7841. Na vstup převodníku jsou připojeny senzory proudu protékajícího fázemi, které pracují na principu Hallova efektu. Převodník může pracovat buď ve 12-bitovém nebo jen v~8-bitovém režimu \cite[adc_man]. 
+Plošném spoj výkonového stupně {\em 3P-MOTOR-DRIVER-1} proto obsahuje čtyřkanálový, 12-bitový A/D převodník ADS7841. Na vstup převodníku jsou připojeny senzory proudů protékajících jednotlivými fázemi, které využívají Hallova jevu. Převodník může pracovat buď ve 12-bitovém nebo jen v~8-bitovém režimu \cite[adc_man]. 
 
-Důležité je zvolit správnou hodinovou frekvenci, která bude přivedena hodinový vstup převodníku. Ta je závislá na napájecím napětí viz sekce \ref[vyk_hw_sec]. Obvod je stejně, jako celé FPGA, napájen napětím 3.3V, které je přivedeno z~RPi. Hodinová frekvence tak byla stanovena na hodnotu 2.08Mhz. Tato frekvence je vyvořena kombinací frekvenčních děliček implementovaných v~komponentách "divider.vhdl" a "adc_reader.vhdl". V~komponentě "dvider.vhdl" dochází k~vydělení frekvence 50MHz dvanácti a vzniká tak frekvence o~velikosti 4.17MHz. Tato frekvence je následně vydělena dvěma v~komponentě "adc_reader.vhdl", o~které je více napsáno níže. Aby v~rámci komponenty "adc_reader" nedošlo k~vytvoření nové hodinové domény, je ke spouštění Procesu ve VHDL určen hlavní 50MHz hodinový signál. Tento signál pak pouze vzorkuje pomalejší 4.17Mhz hodiny. Podobné řešení je popsáno již v~sekci \ref[spi_slave_sec].
+Důležité je zvolit správnou hodinovou frekvenci, která bude přivedena na hodinový vstup převodníku. Její maximální hodnota se pro daný typ převodníku liší podle velikosti napájecího napětí obvodu, viz sekce \ref[vyk_hw_sec]. Obvod je stejně, jako celé FPGA, napájen napětím 3.3V, které je přivedeno z~RPi. Hodinová frekvence tak byla stanovena na hodnotu 2.08Mhz. 
 
-AD převodník je schopen pracovat v~několika módech, které se liší počtem hodinových cyklů nutných k~jednomu převodu. V~základním módu je třeba 24 hodinových pulzů na jednu konverzi. Tento mód předpokládá komunikaci se zařízením vyžadujícím p5enos dat po SPI protokolu s~pevnou délku slova 8 bitů. Je určený především pro nepravidelné odečítání většinou z~mikrokontroléru. Pokud je třeba odečítat hodnoty pravidelně a co nejrychleji, je k~dispozici 16-pulzový převod.
-Máme-li ale možnost použít FPGA obvod, nemusíme se omezovat 8-bitovou šířkou slova a můžeme využít nejrychlejší variantu. Tedy konverzi dokončenou za 15 hodinových pulzů. V~našem případě byla zvolena právě tahle varinta. Průběh 15-cyklového převodu z~hlediska datového přenosu ukazuje Obrázek \ref[15clkconv_obr].
+Tato frekvence je vytvořena kombinací frekvenčních děliček implementovaných v~komponentách "divider.vhdl" a "adc_reader.vhdl". V~komponentě "dvider.vhdl" dochází k~vydělení frekvence 50MHz dvanácti a vzniká tak frekvence o~velikosti 4.17MHz. Tato frekvence je následně vydělena dvěma v~komponentě "adc_reader.vhdl", o~které je více napsáno níže. Aby v~rámci komponenty "adc_reader" nedošlo k~vytvoření nové hodinové domény, je ke spouštění Procesu ve VHDL určen hlavní 50MHz hodinový signál. Tento signál pak pouze vzorkuje pomalejší 4.17Mhz hodiny. Podobné řešení je popsáno již v~sekci \ref[spi_slave_sec].
+
+AD převodník je schopen pracovat v~několika módech, které se liší počtem hodinových cyklů nutných k~jednomu převodu. V~základním módu je třeba 24 hodinových pulzů na jednu konverzi. Tento mód předpokládá komunikaci se zařízením vyžadujícím přenos dat po SPI protokolu s~pevnou délku slova 8 bitů. Je určený především pro nepravidelné odečítání většinou z~mikrokontroléru. Pokud je třeba odečítat hodnoty pravidelně a co nejrychleji, je k~dispozici 16-pulzový převod.
+
+Je-li možnost použít FPGA obvod, není nutné se omezovat 8-bitovou šířkou slova a je možné využít nejrychlejší variantu. Tedy konverzi dokončenou za 15 hodinových pulzů. V~použitém řešení byla zvolena právě tahle varinta. Průběh 15-cyklového převodu z~hlediska datového přenosu ukazuje Obrázek \ref[15clkconv_obr].
+
+
+Komponenta "adc_reader", kromě frekvenční děličky, která je spíše vedlejším produktem, realizuje celou komunikaci mezi AD převodníkem a FPGA. Ta se skládá z~přenosu řídícího slova z~FPGA do ADC a z~následného vyčtení hodnot. Převodník je připojen pomocí čtyř vodičů, analogických k~vodičům použitých v~SPI komunikaci: "CS"(SE), "DCLK"(SCLK), "DIN"("MOSI") a "DOUT"("MISO").
+
+
+Řídící slovo je tvořeno osmi bity. Prvním z~nich je startbit, který při delším provozu s~nepravidelným vyčítáním, při kterém není  vypnutý hodinový signál, definuje počátek komunikace. Následují tři bity adresy určené pro výběr jednoho ze čtyř kanálů. Další bity definují výběr buď 8 či 12-bitové konverze a volbu mezi  \uv{Single-Ended} nebo diferenčním zapojením. Poslední dva bity slouží k~nastavení úspornéro režimu v~době mezi konverzemi.  
 
 \medskip \clabel[15clkconv_obr]{Průbeh konverze v~režimu 15 hodinových pulzůp na převod}
 \picw=13cm \cinspic 15clkconv.png
 \caption/f Průbeh konverze v~režimu 15 hodinových pulzůp na převod (Zdroj:Texas Instruments)
 \medskip
 
-Komponenta "adc_reader", kromě frekvenční děličky, která je spíše vedlejším produktem, realizuje celou komunikaci mezi AD převodníkem a FPGA. Ta se skládá z~přenosu řídícího slova z~FPGA do ADC a z~následného vyčtení hodnot. Převodník je připojen pomocí čtyř vodičů, analogických k~vodičům použitých v~SPI komunikaci: "CS"(SE), "DCLK"(SCLK), "DIN"("MOSI") a "DOUT"("MISO").
-
-Řídící slovo se sestává z~osmi bitů. Prvním z~nich je startbit, který při delším provozu s~nepravidelným vyčítáním, při kterém není  vypnutý hodinový signál, definuje počátek komunikace. Následují tři bity adresy určené pro výběr jednoho ze čtyř kanálů. Další bity definují výběr buď 8 či 12-bitové konverze a volbu mezi  \uv{Single-Ended} nebo Diferenčním zapojením. Poslední dva bity slouží k~nastavení úspornéro režimu v~době mezi konverzemi.  
-
 Komponenta "adc_reader" pak implementuje komunikaci pomocí stavového automatu. Každý ze stavů generuje buď logickou úroveň 1 či 0 do signálu "DCLK". Pokud tak nastala při přechodu mezi dvěma stavy sestupná hrana,   je zapsán bit řídícího slova na vodič "DIN". Ve stejné chvíli také dochází k~zápisu hodnoty na vodič "DOUT" na straně ADC. Při nástupné hraně jsou naopak hodnoty na vodičích "DIN" a "DOUT" vzorkovány. Protože k~přechodu mezi dvěma stavy dochází vždy synchronně s~nástupnou hranou hodinového signálu, má signál "DCLK" vysílaný do převodníku práve poloviční frekvenci.
 
-Nutnost přecházet mezi stavy však neexistuje jen u~konfigurace převodníku a vyčítání hodnot. Je třeba totiž přepínat i mezi jednotlivými kanály. Ve výše zmíněném stavovém automatu je tak vnořen ještě jeden, který přepíná právě mezi odečítáním proudů z~jednotlivých fází.
+Nutnost přecházet mezi stavy však neexistuje jen u~konfigurace převodníku a vyčítání hodnot. Je třeba totiž přepínat i mezi jednotlivými kanály. Výše zmíněný stavový automat je tak logicky vnořen do dalšího, který přepíná právě mezi odečítáním proudů z~jednotlivých fází. 
 
-Konfiguraci řídicího slova a adresy kanálů všech tří fází ukazují tabulky
+Konfiguraci řídicího slova a adresy kanálů všech tří fází ukazují tabulky \ref[ctrl_word_tab] a \ref[address_tab].
 
  \medskip \clabel[ctrl_word_tab]{Konfigurace řídícího slova}
 \ctable{lcl}{ 
@@ -839,26 +852,26 @@ Konfiguraci řídicího slova a adresy kanálů všech tří fází ukazují tab
 		1 & 0 & Power Down mód \cr
 		0 (LSB) & 0 & Power Down mód \cr
 }
-\caption/t Přenos z~FPGA obvodu do Raspberry Pi 
+\caption/t Konfigurace řídícího slova 
 \medskip 
 
- \medskip \clabel[address_tab]{Konfigurace řídícího slova}
+ \medskip \clabel[address_tab]{Adresace kanálů ADC}
 \ctable{cccc}{ 
 	\hfil Kanál & Bit 2 adresy & Bit 1 adresy & Bit 0 adresy  \crl
 		ch0 & 0 & 0 & 1 \cr
 		ch1 & 1 & 0 & 1 \cr
 		ch2 & 0 & 1 & 0 \cr
 }
-\caption/t Přenos z~FPGA obvodu do Raspberry Pi 
+\caption/t Adresace kanálů ADC 
 \medskip 
 
 \secc Sčítání více hodnot proudu
 
 Po první implementaci měření proudů bylo patrné, že nedochází k~ustálení hodnot přibližně na posledních 3 bitech. Částečným zpřesněním může být použití výběrového průměru namísto jen jedné změřené hodnoty.
 
- K~vyčtení hodnoty z~AD převodníku dochází vzhledem k~ferekvenci řídicí smyčky poměrně rychle. Při 15 hodinových cyklech nutných pro jednu konverzi a hodinové frekvenci 2.08Mhz, může dojít až ke 138 převodům. Na každou měřenou fázi to dělá zhruba 46 odečtených hodnot. Byla provedena následující úvaha:
+ K~vyčtení hodnoty z~AD převodníku dochází v porovnání s~frekvencí řídicí smyčky (1kHz) poměrně rychle. Při 15 hodinových cyklech nutných pro jednu konverzi a hodinové frekvenci 2.08Mhz, může dojít až ke 138 převodům. Pro každou měřenou fázi se jedná přibližně o 46 převodů. Byla provedena následující úvaha:
 
-Změřenou hodnotu proudu procházejícího jednou z~fází za neměnných podmínek označme jako náhodnou veličinu $X$. Za předpokladu, že tato náhodná veličina má normální rozložení pravděpodobnosti, platí, že skutečná hodnota proudu je rovna její střední hodnotě. Tedy $i_s=EX$.
+Změřenou hodnotu proudu procházejícího jednou z~fází za neměnných podmínek označme jako náhodnou veličinu $X$. Za předpokladu, že tato náhodná veličina má normální rozložení pravděpodobnosti, platí, že skutečná hodnota proudu je rovna její střední hodnotě. Tedy $i_p=EX$, $p\in\{a,b,c\}$.
 
 Realizujme tedy náhodný výběr z~této veličiny a spočtěme jeho výběrový průměr. Pro výběrový průměr náhodné veličiny platí následující vztahy\cite[navara]:
 
@@ -874,13 +887,15 @@ Pro jeho směrodatnou odchylku $\sigma_{\overline{\bf{x}}_n}$ pak platí:
 
 $$\sigma_{\overline{\bf{x}}_n}={{1}\over{\sqrt{n}}}\sigma_x \eqmark$$
 
-Za předpokladu, že $n=46$ tedy platí, že $\sigma_{\overline{\bf{x}}_{46}}\approx{{1}\over{6.8}}\sigma_x$. Směrodatná odchylka výběrového průměru se oproti odečtení samostatných měření zmenšila 6.8x. A~protože $\log_n 6.8\approx2.7$, je možno říci, že jsme získali téměř tři bity informace navíc.
+Za předpokladu, že $n=46$ tedy platí, že $\sigma_{\overline{\bf{x}}_{46}}\approx{{1}\over{6.8}}\sigma_x$. Směrodatná odchylka výběrového průměru se oproti odečtení samostatných měření zmenšila 6.8x. A~protože $\log_2 6.8\approx2.7$, je možno říci, že jsme získali téměř tři bity informace navíc.
 
 \sec Generování PWM
 
-Generováním signálů PWM se zabývá komponenta "mcpwm". Její návrh implementuje 11-bitovou PWM. Základní myšlenkou je srovnání signálních vektorů "count" a "match_reg". "count" je výstup z~11-bitového čítače, který je spouštěný hlavním 50MHz hodinovým signálem. "match" je pak odesílnáno ve finální podobě již z~Raspberry Pi. Frekvence PWM je tedy $50000/2^{11}\approx 24.4$kHz.
+Generováním signálů PWM se zabývá komponenta "mcpwm". Její návrh implementuje 11-bitovou PWM.
 
-Na začátku cyklu, který je detekován při přetečení čítače, je nastaven po dobu jednoho hidinového cyklu signál "sync" na logickou 1. V~té chvíli je výstup PWM nastaven na "next_q<='1'". Zároveň je kontrolována podmínka "match=count", při jejím splnění dojde nastavení výstupu PWM na 0.
+ Základem funkce je nastavení příslušného výstupu na hodnotu logická 1 při průchodu čítače "count" nulou a ukončení plnění PWM cyklu při shodně čítače "count" se zadanou nodnotou plnění, uloženou v registru "match_reg". Hodnota "match" je odesílána ve finální podobě již z~Raspberry Pi. Čítač "count" je inkrementován hlavním hodinovým signálem "gpio_clk" o frekvenci 50MHz, frekvence PWM je tedy $50000/2^{11}\approx 24.4$kHz.
+
+Průchod čítače "count" nulou je mimo jiné detekován nastavením signálu "sync" po dobu jednoho hodinového cyklu na hodnotu 1.
 \ttline-1
 \begtt
 process (sync, count, match_reg, q)  
@@ -896,7 +911,7 @@ end process;\endtt
   
    Jeden hodinový cyklus před nastavením signálu "sync" na hodnotu 1, je prováděna kontrola, zda je k~dispozici nová hodnota signálu "match". V~takovém případě je v~dalším cyklu PWM používána již aktualizovaná hodnota "match_reg<=match". 
 
-Protože potřebujeme generovat tři signály PWM, je nutné bloky "mcpwm" vytvořit právě tři. Čítač je však vyvořen jen jeden a všemi bloky je sdílen.  
+Protože potřebujeme generovat tři signály PWM, je nutné bloky "mcpwm" vytvořit právě tři. Vystup čítače je pak rozveden na všechny tři bloky.  
 
 
 \sec Dekódování IRC
@@ -905,9 +920,9 @@ Dekódování výstupů IRC senzoru je realizováno v~komponentě "qcounter.vhdl
 
 Vstupem komponenty jsou signály "irc_A" a "irc_B". Podle pořadí, v~jakém dochází ke změnám těchto dvou signálů,je možné odvodit, v~jakém směru se motor otáčí.
 
-Signály "irc_A" a "irc_B" jsou nejprve synchronně vzorkovány DFF obvodem spouštěným hlavní hodinovou frekvencí "gpio_clk". Aby došlo ke ztrátě informace o~poloze, muselo by tak dojít ke dvěma změnám jednoho signálu během jednoho hodinového cyklu. Motor by se tedy musel za tuto dobu pootočit o~tři body IRC. To by při frekvenci "gpio_clk" 50MHz znamenalo frekvenci otáčení  nejméně 75KHz, tedy 4500 tisíc otáček za minutu, což se nepředpokládá.
+Signály "irc_A" a "irc_B" jsou nejprve synchronně vzorkovány DFF obvodem spouštěným hlavní hodinovou frekvencí "gpio_clk". Aby došlo ke ztrátě informace o~poloze, muselo by tak dojít ke dvěma změnám jednoho signálu během jednoho hodinového cyklu. Motor by se tedy musel za tuto dobu pootočit o~tři rozlišitelné pozice IRC. To by při frekvenci "gpio_clk" 50MHz znamenalo frekvenci otáčení  nejméně 75KHz, tedy 4.5 miliónu otáček za minutu, což není z konstrukčních důvodů zdaleka možné.
 
-Nejmenší dva bity výsledné pozice jsou pak vytořeny čistě kombinačně z~navzorkovaných "irc_A" a "irc_B":
+Nejmenší dva bity výsledné pozice jsou vytořeny čistě kombinačně z~navzorkovaných "irc_A" a "irc_B":
   \ttline-1   
   \begtt
 	qcount(0) <= a xor b;
@@ -926,7 +941,7 @@ Veličiny s~příponou "_prev" jsou pak veličiny zpožděné o~jeden hodinový 
 \begtt
   qcount(31 downto 2) <= count;\endtt
 
-
+\vfil \break
 \sec Implementace požadavků RT rozšíření v~uživatelském kódu 
 
 Aby bylo možné plně využívat možností, které nabízí RT-rozšíření jádra Linux, je nutné v~uživatelském kódu dodržovat některá základní pravidla. K~těmto pravidlům patří například použití RT plánovací strategie nebo správné nastavení priorit vláken v~rámci plánovače \cite[rt-wiki]. Implementaci těchto požadavků se věnuje právě tato sekce.
