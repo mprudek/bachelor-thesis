@@ -867,7 +867,7 @@ Konfiguraci řídicího slova a adresy kanálů všech tří fází ukazují tab
 
 \secc Sčítání více hodnot proudu
 
-Po první implementaci měření proudů bylo patrné, že nedochází k~ustálení hodnot přibližně na posledních 3 bitech. Částečným zpřesněním může být použití výběrového průměru namísto jen jedné změřené hodnoty.
+Po první implementaci měření proudů bylo patrné, že nedochází k~ustálení hodnot přibližně na posledních 5 bitech. Částečným zpřesněním může být použití výběrového průměru namísto jen jedné změřené hodnoty.
 
  K~vyčtení hodnoty z~AD převodníku dochází v porovnání s~frekvencí řídicí smyčky (1kHz) poměrně rychle. Při 15 hodinových cyklech nutných pro jednu konverzi a hodinové frekvenci 2.08Mhz, může dojít až ke 138 převodům. Pro každou měřenou fázi se jedná přibližně o 46 převodů. Byla provedena následující úvaha:
 
@@ -948,23 +948,27 @@ Aby bylo možné plně využívat možností, které nabízí RT-rozšíření j
 
 \secc Nasatvení priority a plánovací strategie
 
-Plánovač v~RT aplikacích může využívat více strategií. Ten, který je k~dispozici v~rámci RT rošíření jádra Linux využívá plánování s~pevnými prioritami. Pokud je připraveno k~běhu vlákno s~vyšší prioritou, než má vlákno právě běžicí, je běžící vlákno neprodleně přeplánováno.
+Jádro OS Linux implementuje pět různých plánovacích strategií. Strategie "SCHED_FIFO", "SCHED_RR" a "SCHED_OTHER" jsou definovány standartem POSIX, "SCHED_BATCH" a "SCHED_IDLE" jsou pak pro systém specifické. Pro plánování každého vlákna aplikace může být zvolena libovolná z nich.
 
-Priority vláken je možné explicitně stanovit v~uživatelském kódu. Rozsah jejich hodnot se pohybuje mezi 99 a 50 pro procesy jádra a mezi 49 až 1 pro uživatelské aplikace. Platí, že čím vyšší hodnota, tím vyšší priorita. 
+Strategie "SCHED_OTHER" přiděluje úlohám poměrnou část strojového času podle nastavení {\em nice}.
 
-V~rámci prioritního plánování je ještě nutné stanovit, k~jakému chování dojde, budou-li k~běhu připravena dvě vlákna se stejnou prioritou. K~tomuto účelu slouží výběr mezi dvěma variantami: 
+Pro RT aplikace jsou využívány strategie "SCHED_FIFO" a "SCHED_RR", které mají v okamžiku přeplánování přednost před všemi ostatními. Strategie "SCHED_FIFO" a "SCHED_RR" využívají plánování s~pevnými prioritami. Pokud je připraveno k~běhu vlákno s~vyšší prioritou, než má vlákno právě běžicí, je běžící vlákno v nebližší možné době nahrazeno vláknem z vyšší prioritou.
+
+Omezou dobu odezvy, za kterou dojde k přeplánování, pak garantuje pouze jádro s aplikovaným RT rozšířením, tím že odstraňuje nepřerušitelné úseky kódu ve službách a servisních vláknch jádra OS.
+
+Priority vláken v rámci strategií "SCHED_FIFO" a "SCHED_RR" je možné explicitně stanovit v~uživatelském kódu. Rozsah jejich hodnot se pohybuje mezi 99 a 1. Hodnota 50 je výchozí priorita úloh obsluhujících v RT variantě jádra přerušení od periférií. Platí, že čím vyšší hodnota, tím vyšší priorita. 
+
+V~rámci prioritního plánování je ještě nutné stanovit, k~jakému chování dojde, budou-li k~běhu připravena dvě vlákna se stejnou prioritou. V tomto bodě se strategie "SCHED_FIFO" a "SCHED_RR" následovně odlišují: 
 
 
 \begitems 
 
-* "SCHED_FIFO": Pokud je vákno plánováno v~tomto módu a stane se připraveným k~běhu, je okamžitě pozastaveno vykonávání všech vláken s~jiným než RT plánovačem. V~případě, že právě beží jiné "SCHED_FIFO" vlákno, je nové vlákno zařazeno na konec fronty čekajících na přidělení procesorového času. Ve chvíli, kdy je novému vláknu procesor přidělen, není mu odejmut, dokud není zablokováno či ukončeno. 
+* "SCHED_FIFO":  V~případě, že právě beží jiné "SCHED_FIFO" nebo "SCHED_RR" vlákno se stejnou prioritou, je nové vlákno zařazeno na konec fronty úloh, se stejnou prioritou, čekajících na přidělení procesorového času. Ve chvíli, kdy je novému vláknu procesor přidělen, není mu odejmut, dokud není zablokováno či ukončeno. 
 
-* "SCHED_RR": Sdílí všechny vlastnosti "SCHED_FIFO". Běžící vlákno je ale přeplánováno vždy po uplynutí pevně stanoveného časového kvanta. Respektive je zařazeno na konec fronty čekajících na přidělení procesorového času.
+* "SCHED_RR": Sdílí všechny vlastnosti "SCHED_FIFO". Běžící vlákno je ale přeplánováno vždy po uplynutí pevně stanoveného časového kvanta. Respektive je zařazeno na konec fronty úloh, se stejnou prioritou, čekajících na přidělení procesorového času.
 \enditems
 
-Tato pravidla se týkají pouze vláken se stejnou prioritou. V~případě, že jsou k~běhu připravena dvě nebo více vláken s~rozdílnou prioritou, není na ně brán zřetel \cite[sch_man].
-
-Pro nastavení priority a plánovací strategie v~rámci vlákna slouží systémové volání: "int sched_setscheduler(pid_t pid, int p, const struct sched_param *s);". Její použití je následující:
+Pro nastavení priority a plánovací strategie v~rámci vlákna slouží systémové volání: "int sched_setscheduler(pid_t pid, int p, const struct sched_param *s)". Jeho použití je následující:
 
 \begtt
 struct sched_param param;
@@ -974,7 +978,7 @@ if(sched_setscheduler(0, SCHED_FIFO, &param) == -1) {
      exit(-1);
 }\endtt
 
-Pro nastavení priority a plánovače vlákna, které teprve bude vytvořeno je nutné nejprve povolit nastavení plánovače prostřednicvím atributu, který je předáván při tvorbě vlákna (dále jen \uv{atribut}). Poté je třeba nastavit prioritu a plánovací strategii. Nakonec je vyvořeno i samotné vlákno. Celý proces je uveden níže: (Pro zvýšení přehlednosti zde byla odstraněna detekce chybových stavů)
+Pro nastavení priority a plánovače vlákna, které teprve bude vytvořeno je nutné nejprve povolit nastavení plánovače prostřednicvím atributu, který je předáván při tvorbě vlákna (dále jen \uv{atribut}). Poté je třeba nastavit prioritu a plánovací strategii. Nakonec je vytvořeno i samotné vlákno. Celý proces je uveden níže: (Pro zvýšení přehlednosti zde byla odstraněna detekce chybových stavů)
 \begtt
 	pthread_attr_t attr; 	       /*atribut předávaný při tvorbě vlákna*/
 	struct sched_param schparam;	/*struktura pro nastavení priority*/
@@ -1000,18 +1004,18 @@ Pro nastavení priority a plánovače vlákna, které teprve bude vytvořeno je 
 
 Frekvence řídicí smyčky byla stanovena v~sekci \ref[ctr_loop_freq]. Nyní je třeba zajistit, aby byla tato frekvence skutečně dodržena.
 
-Pro periodického vykonávání kódu o~stanovené frekvenci je možné využít cyklu "while", v~jehož těle je volána funkce realizující čekání. Nejjednodušší variantou takové funkce jsou knihovní volání "unsigned int sleep(unsigned int seconds)" a "int usleep(useconds_t usec)". Tato volání však neberou v~úvahu čas, po který je vykonávána samotná periodická činnost. Prodleva, která jimi vyvolána se také může prodlužovat v~závislossti na zatížení systému nebo na délce vykonávání samotného volání \cite[usleep_man].
+Pro periodického vykonávání kódu o~stanovené frekvenci je možné využít cyklu "while", v~jehož těle je volána funkce realizující čekání. Nejjednodušší variantou takové funkce jsou knihovní volání "unsigned int sleep(unsigned int seconds)" a "int usleep(useconds_t usec)". Tato volání však neberou v~úvahu čas, po který je vykonávána samotná periodická činnost. Prodleva, která je takto realizovaná se také může prodlužovat v~závislossti na zatížení systému nebo na délce vykonávání samotného volání \cite[usleep_man].
 
-Je tedy nutné použít \uv{čekací} funkci s~přesně definovaným chováním. Takovou funkcí je "int clock_nanosleep(...)". Při jejím volání, na místo čekání po stanovenou dobu, dojde k~pozastavení vykonávání kódu do časového okamžiku definovaného ve struktuře "timespec". Na počátku je tedy nutné získat aktuální čas, k~tomu slouží funkce  "int clock_gettime(clockid_t clk_id, struct timespec *tp)". Její použití je následující:
+Je tedy nutné použít \uv{čekací} funkci s~přesně definovaným chováním. Takovou funkcí je "int clock_nanosleep(...)". Při jejím volání, na místo čekání po stanovenou dobu, dojde k~pozastavení vykonávání kódu do časového okamžiku, definovaného ve struktuře "timespec". Na počátku je tedy nutné získat aktuální čas, k~tomu slouží funkce  "int clock_gettime(clockid_t clk_id, struct timespec *tp)". Její použití je následující:
 
 \ttline 0
 \begtt      
 struct timespec t_spec;
 clock_gettime(CLOCK_MONOTONIC ,&t_spec); /*zjisteni pocatecniho casu*/ \endtt
 
-"CLOCK_MONOTONIC" označuje použití systémových hodin, které pracují nezávisle na zatížení systému a není možné za běhu modifikovat jejich hodnotu.
+"CLOCK_MONOTONIC" označuje použití systémových hodin, které pracují podobně jako "CLOCK_REALTIME" nezávisle na zatížení systému. Hodnotu "CLOCK_MONOTONIC" navíc není možné za běhu modifikovat například administrátorským zásahem.
 
-Poté je nutné inkrementovat "timespec" a nastavit tak okamžik opětovného spuštění kódu.
+Pokud je to nutné, je poté možné inkrementovat "timespec" a nastavit tak okamžik opětovného spuštění kódu. Tato možnost může být využita například při ladění.
 
 \begtt
 t_spec.tv_sec++; /*pocatecni prodleva - 1s*/ \endtt
@@ -1061,9 +1065,9 @@ Jak bylo uvedeno výše, PMS motory nevyužívají ke komutaci mechanické kart�
 
 Pokud není k~dispozici absolutní poloha motoru, není možné řídit komutaci pomocí výstupu z~IRC senzoru. V~takovém připadě je realizován nejjednodušší způsob komutace, pouze za použití výstupu z~Hallových sond.
 
-Výstup z~Hallových sond umožňuje lokalizovat polohu motor ve dvanáctí úsecích mechanického plného úhlu. Vzhledem ke konstrukci motoru odpovídají jednomu mechanickému kruhu dva kruhy elektrické. Je tedy možné určit polohu motoru v~rámci jednoho ze šesti úseků elektrického kruhu. Rozložení úseků elektrického kruhu je na obrázku \ref[hall_pos_obr].
+Výstup z~Hallových sond umožňuje lokalizovat polohu motor ve dvanáctí úsecích mechanického cyklu. Vzhledem ke konstrukci motoru odpovídají jednomu mechanickému cyklu dva cykly elektrické. Je tedy možné určit polohu motoru v~rámci jednoho ze šesti úseků elektrického cyklu. Rozložení úseků elektrického cyklu je na obrázku \ref[hall_pos_obr].
 
-Z~takto zjištěné polohy je následně možné řídit komutaci tak, aby proud procházel jen jednou z~fází a docházelo tak k~natočení rotoru do požadované pozice. 
+Z~takto zjištěné polohy je následně možné řídit komutaci tak, aby bylo napětí přivedeno jen na jednou z~fází a docházelo tak k~natočení rotoru do požadované pozice. 
  
 \medskip \clabel[hall_pos_obr]{Rozložení výstupů z~Hallových sond}
 \picw=9cm \cinspic hall_pos.pdf
@@ -1089,16 +1093,14 @@ if (hal2 && !hal3){
     rps.pwm3=0;
 } \endtt
 
-Velkou nevýhodou této komutace je kolísání točivého momentu v~závislosti na úhlu natočení rotoru. Dochází tak k~nepříjemnému otřásání motoru.
+Velkou nevýhodou této komutace je kolísání točivého momentu v~závislosti na úhlu natočení rotoru. Dochází tak k~nepříjemným otřesům motoru.
 
 \label[120_sec]
 \secc Komutace pomocí přičítání 120 stupňů
 
-Pokud je k~dispozici absolutní poloha rotoru v~rámci celého elektrického úhlu s~dostatečnou přesností, je možné právádět komutaci tak, aby točivý moment zůstával konstantní v~průběhu celé otáčky.
+Pokud je k~dispozici absolutní poloha rotoru v~rámci celého elektrického cyklu s~dostatečnou přesností, je možné právádět komutaci tak, aby točivý moment zůstával konstantní v~průběhu celé otáčky.
 
-Jednou z~možností, jak realizovat takovou komutaci je simulovat sinusový průběh napětí na jednotlivých fázích. Fáze přitom budou oproti sobě posunuty o~$120^{\circ}$
-
-Z~hardwarových důvodů není možné pomocí pwm vyvolat ve fázi záporný proud. Tato skutečnost ale není na závadu, protože soustava tří fází je přeurčená viz. rovnice \ref[soucet_nula_rce]. Z~toho důvodu záporný proud vznikne jako opačná hodnota součtu proudů kladných. Pro pohyb ve směru hodinových ručiček může být ve zdrojovém kódu taková operace provedena následovně:
+Jednou z~možností, jak realizovat takovou komutaci je simulovat sinusový průběh napětí na jednotlivých fázích. Fáze přitom budou oproti sobě posunuty o~$120^{\circ}$. Pro pohyb ve směru hodinových ručiček může být ve zdrojovém kódu taková operace provedena následovně:
 
 \begtt
 sin = pxmc_sin_fixed_inline(pos+DEGREE_240,10);
@@ -1114,7 +1116,7 @@ pwm3=sin*duty/1024;
 if (pwm3<0) pwm3=0;
 \endtt
 
-Kde "pxmc_sin_fixed_inline" je funkce z~knihovny {\em PXMC}, která celočíselně, s~přesností 10 bitů, počítá hodnotu sinu. Proměnná "pos" udává úhlovou pozici rotoru. 
+Kde "pxmc_sin_fixed_inline" je funkce z~knihovny {\em PXMC}, která celočíselně, se specifikovanou přesností 10 bitů, počítá hodnotu sinu. Proměnná "pos" udává úhlovou pozici rotoru. 
 
 \label[vektor_impl_sec]
 \secc Vektorové řízení
@@ -1177,21 +1179,23 @@ Nyní je již jen nutné vypočtené hodnoty fází přiřadit jednotlivým PWM:
 	
  \chap Závěr
  
-Cílem  práce  je  realizovat řízení pro  synchronní bezkartáčové motory s~využitím jednodeskového počítače Raspberry PI a Linuxu. To vše při použití rozšiřující jednotky intergrující výkonový hardware a FPGA obvod.
+Cílem  práce  je  realizovat řízení pro  synchronní bezkartáčové motory s~využitím jednodeskového počítače Raspberry Pi a Linuxu. To vše při použití rozšiřující jednotky intergrující výkonový hardware a FPGA obvod.
   
   V~první  části  práce  jsou  prezentovány  základy  vlastní konstrukce synchronního  bezkartáčového motoru,  princip  jeho  činnosti  a základní matematický popis. Jako vhodné matematické  nástroje jsou zde uvedeny Clarkova a Parkova transformace.
   
   Další kapitola podrobně popisuje použitý hadrware. Je zde věnován prostor motoru a jeho parametrům, rozšiřující jednotce nebo RPi a jeho vlastnostem. Zvláštní pozornost se dostala nasazení víceúčelového operačního systému GNU/Linux, a jeho RT-rozšíření, pro realizaci zpětvovazebního řízení. Bylo tak potvrzeno, že tento systém je použitelný a vhodný pro zadanou práci a je tak možné ho doporučit k~podobným účelům. 
   
-  Následující kapitola se již plně věnuje realizaci projektu. V~úvodu je uvedeno, jaké požadavky klade řízený motor na frekvenci řídicí smyčky. S~ohledem na možnosti procesorové jednotky je vybrána fekvence 1kHz. Realizace projektu prokázála, že řízení za této frekvence je možné. 
+  Následující kapitola se již plně věnuje realizaci projektu. V~úvodu je uvedeno, jaké požadavky klade řízený motor na frekvenci řídicí smyčky. S~ohledem na možnosti procesorové jednotky a vlastnosti řízené soustavy je vybrána fekvence 1kHz. Realizace projektu prokázála, že řízení za této frekvence je možné. 
   
   Jako minimální objem dat přenášených mezi RPi a rozšiřující jednotkou v~každém cyklu řídicí smyčky bylo stanoveno 128 bitů. Pro jejich přenos byl vybrán protokol SPI. Pro budoucí práci je možné doporučit využití právě tohotu protokolu. Zajímavou alternativou je ale použití protokolu SSI, který v~sobě integruje přenos hodinového signálu.
   
-  Pro možnou realizaci \uv{Sensorles} řízení je nezbyná znalost proudů, protékajících vinutím statoru. Jejich snímaní je prováděno s~využitím Hallova jevu. Napětí, takto získané je převáděno 12-bitovým AD převodníkem. Zde bylo provedeno vylepšení snímání tohoto napětí, kdy byl místo jedné odečtené hodnoty posílán  řídicí jednotce jejich výběrový průměr. Toto řešeni vedlo k~redukci šumu a tím ke zpřesnění naměřených hodnot.
+  Pro možnou realizaci plného momentového řízení a řízení bez polohových senzorů (sensorless control) je nezbyná znalost proudů, protékajících vinutím statoru. Jejich snímaní je prováděno s~využitím Hallova jevu. Napětí, takto získané je převáděno 12-bitovým AD převodníkem. Zde bylo provedeno zpřesnění snímání tohoto napětí. Nyní je místo jedné odečtené hodnoty posílán řídicí jednotce jejich výběrový průměr. Toto řešeni vedlo k~redukci šumu a tím krozšíření přesnosti naměřených hodnot.
   
-  Vlastní sekce je věnována implementaci požadavků RT-rozšiření jádra Linux. Lze konstatovat, že bez jejich naplnění nelze uživatelské aplikaci garantovat deterministické chování. Samotná aplikace RT-rozšíření tak způsobí pouze prodloužení průměrného času odezvy na vnější událost, aniž by přinášela nějaké výhody.
+  Vlastní sekce je věnována implementaci požadavků a algoritmickým konstrukcím, které musejí být dodrženy v řídicí aplikaci využívající RT-rozšíření jádra Linux. Lze konstatovat, že bez jejich naplnění nelze uživatelské aplikaci garantovat deterministické chování. Samotná aplikace RT-rozšíření tak způsobí pouze prodloužení průměrného času odezvy na vnější událost, aniž by přinášela jakékoli výhody.
   
-  Pro výukové účely jsou implementovány pouze jednoduché metody elektronické komutace. Při použití komutace využívající jen výstup z~Hallových sond dochází k~nepříjemnému klepání. Jedná se ale o~jedinou možnost, pokud nemáme k~dispozici přesnou hodnotu natočení rotoru v~rámci celého rozsahu otáčeni. S~její znalostí je ale možné provádět komutaci založenou na fázovém posunu všech fází a odstranit tak tyto nedostatky.
+  Pro výukové účely jsou implementovány dvě jednoduché metody elektronické komutace. Při použití komutace využívající jen výstup z~Hallových sond dochází k~nežádoucím vibracím motoru. Jedná se ale o~jedinou možnost, pokud nemáme k~dispozici přesnou hodnotu natočení rotoru v~rámci celého rozsahu otáčeni nebo dostatečně přesné měření proudu.
+  
+   S~přesnou znalostí polohy je možné provádět komutaci založenou na fázovém posunu všech fází o $120^\circ$ a realizovat tak jednoduché napěťové řízení.
   
    
  
