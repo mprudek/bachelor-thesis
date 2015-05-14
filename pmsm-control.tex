@@ -15,13 +15,13 @@
  \specification {\picw=16.6cm \cinspic zadani.pdf }
  \abstractEN {Bachelor thesis is focused on control of permanent magnet synchronous motors (PMSM) with single-board computer Raspberry Pi and Linux. For this purpose expansion unit which integrates power management and field-programmable gate array (FPFA) is used.
  
- The first part of thesis deals with theory of PMSM, including their construction, mathematical description and possibilities of control. After this takes place presentation of used hardware, Raspberry Pi, expansion unit and motor.
+ The first part of thesis deals with theory of PMSM, including their construction, mathematical description and possibilities of control. After this, presentation of used hardware, Raspberry Pi, expansion unit and motor takes place.
  
  Thesis continues with description of operating system GNU/Linux and its Real-Time modification.
  
- To fulfil communication between expansion board and superior system protocol SPI is used. Its implementation in FPGA and Raspberry Pi is described in next chapter.
+ To fulfil communication between expansion unit and superior system protocol SPI is used. Its implementation in FPGA and Raspberry Pi is described in next chapter.
  
- For the purpose of measure currents in stator windings is used solution which utilizes Hall effect. Voltages, that are obtained this way are then processed in A/D converter. To read values from A/D converter simple communication protocol is implemented in FPGA.    
+ For the purpose of measure currents in stator windings is used solution which takes advantage of Hall effect. Voltages, that are obtained this way are then processed with A/D converter. To read values from A/D converter simple communication protocol is implemented in FPGA.    
  
  The last part of the thesis examines multiple possibilities of electronic commutation. Commutation that utilizes only outcome of Hall effect sensors and simple commutation that carry out phase shift by $120^\circ$ are implemented. In the very end the vector control of PMSM is presented.
     }
