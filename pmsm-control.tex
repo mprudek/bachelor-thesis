@@ -1017,7 +1017,7 @@ V~rámci prioritního plánování je ještě nutné stanovit, k~jakému chován
 
 \begitems 
 
-* "SCHED_FIFO":  V~případě, že právě beží jiné "SCHED_FIFO" nebo "SCHED_RR" vlákno se stejnou prioritou, je nové vlákno zařazeno na konec fronty úloh, se stejnou prioritou, čekajících na přidělení procesorového času. Ve chvíli, kdy je novému vláknu procesor přidělen, není mu odejmut, dokud není zablokováno či ukončeno. 
+* "SCHED_FIFO":  V~případě, že právě beží jiné "SCHED_FIFO" nebo "SCHED_RR" vlákno se stejnou prioritou, je nové vlákno zařazeno na konec fronty úloh, se stejnou prioritou, čekajících na přidělení procesorového času. Ve chvíli, kdy je novému vláknu procesor přidělen, není mu odejmut, dokud není zablokováno, ukončeno nebo nahrazeno vláknem s vyšší prioritou. 
 
 * "SCHED_RR": Sdílí všechny vlastnosti "SCHED_FIFO". Běžící vlákno je ale přeplánováno vždy po uplynutí pevně stanoveného časového kvanta. Respektive je zařazeno na konec fronty úloh, se stejnou prioritou, čekajících na přidělení procesorového času.
 \enditems
