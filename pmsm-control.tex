@@ -182,7 +182,9 @@ $$
 \label[rce1]
 u_{a}=R_si_{a}+{{d}\over{dt}}\psi_{a} \eqmark$$
 $$ u_{b}=R_si_{b}+{{d}\over{dt}}\psi_{b} \eqmark$$
-$$ u_{c}=R_si_{c}+{{d}\over{dt}}\psi_{c} \eqmark$$
+$$
+\label[clark_napet_rce_3]
+u_{c}=R_si_{c}+{{d}\over{dt}}\psi_{c} \eqmark$$
 
 kde $\psi_{a}$,$\psi_{b}$ a $\psi_{c}$ jsou magnetické indukční toky vyvolané proudy odpovídajících vinutí. Vyjádření složek napětí v $\alpha\beta$ souřadné soustavě odpovídá:
 
@@ -215,7 +217,7 @@ Pro tyto účely je tedy vhodné veličiny fixovat k~osám spojeným právě s~r
 
 V~soustavě spojené se statorem byly veličiny s~úspěchem vyjádřeny pomocí Clarkovy transformace. K~jejich vyjádření v~soustavě rotující společně s~rotorem, je silným nástrojem transformace Parkova (dq0 transformace).
 
-Transformace je realizována podobně, jako v~předchozím případě, pomocí operátoru otočení. Vektor  $\overline{i}_{r} $ symbolizuje komplexní vektor proudu vztažený k~osám {\em d} a {\em q}.
+Transformace je realizována podobně, jako v~předchozím případě, pomocí operátoru otočení. Symbol $\overline{i}_{r} $ představuje komplexní vektor proudu vztažený k~osám {\em d} a {\em q}.
 
 $$
 \label[park_1_rce] 
@@ -414,6 +416,54 @@ Tímto způsobem byla transformační matice rozšířenana velikost 3x3. Matice
     $$
     
  Zde je nutné připomenout, že z~rovnice \ref[soucet_nula_rce] vyplývá:  $i_{\gamma}=z( i_{a} + i_{b} + i_{c}) = 0 $.
+ 
+ \secc Transformace napětí při delta zapojení
+ 
+ Pomocí iverzní Clarkovy transformace je lze vypočítat jednotlivé statorové proudy. Z rovnic \ref[rce1] až \ref[clark_napet_rce_3] pak vyplývá, že proudy je možné řídit napětím na vinutí. 
+ 
+ Nyní je tedy třeba  napětí $u_a$, $u_b$ a $u_c$, které představují akční zásahy pro řízení proudů, přepočítat na napětí $u_1$, $u_2$ a $u_3$, která jsou již přímo úměrná šířce plnění PWM. Pro výpočet je uvažována zapojení typu \uv{delta}. Schématicky problém postihuje obrázek \ref[delta_obr]. 
+ 
+ \medskip \clabel[delta_obr]{Delta zapojení}
+\picw=10cm \cinspic delta.pdf
+\caption/f Delta zapojení 
+\medskip 
+
+Pro vyjádření napětí $u_a$, $u_b$ a $u_c$ je možné využít následující vztahy:
+$$
+\eqalignno{
+    u_a &=u_3-u_2 & \eqmark \cr 
+	u_b &=u_2-u_1 & \eqmark \cr 
+	u_c &=u_1-u_3 
+ & \eqmark \cr}
+ $$
+Maticový zápis:
+ $$
+  \left[\matrix{u_{a} \cr
+                u_{b} \cr
+                u_{c}
+    }\right]
+    =
+  \left[\matrix{0&-1&1 \cr
+                -1&1&0 \cr
+                1&0&-1
+    }\right]
+     \left[\matrix{u_{1} \cr
+                u_{2} \cr
+                u_{3}
+    }\right]
+    \eqmark
+    $$
+Soustava je přeurčená, matice sostavy je tedy singulární a není možné vytvořit inverzní matici. Při parametrizaci jednoho z napětí, vyberme $u_{3}=t$, je ale možné vyjádřit $u_1$ až $u_3$, tak, aby jejich rozdíly (napětí $u_a$ až $u_c$) zůstaly zachovány:
+$$
+\eqalignno{
+	\label[u1_rce] u_1 &=t+u_c & \eqmark \cr 
+	u_2 &=t+u_c+u_b & \eqmark \cr 
+	\label[u3_rce] u_3 &=t 
+ & \eqmark \cr}
+ $$
+Parametr $t$ je možné volit libovolně. 
+
+   
  
  \chap Popis hardware
  
@@ -623,7 +673,7 @@ Pro měření statorových proudů, protékajících jednotlivými fázemi motor
  
   Asynchronní verze protokolu USART nemá v~tomto případě smysl, protože náš FPGA obvod nemá vnitří zdroj hodinového signálu. Hlavní doménou tohoto protokolu je využití pro konzoli ajeho složitá implementace na straně operačního systému opět nezaručuje determinismus.
   
-\midinsert \clabel[spi_obr]{Propojení Raspberry Pi s~výkonovým HW}
+\midinsert \clabel[spi_obr]{SPI s~jedením uzlem typu slave}
 \picw=10cm \cinspic SPI_single_slave.pdf
 \caption/f SPI s~jedením uzlem typu slave (Zdroj:wikipedia.org)
 \endinsert
@@ -780,7 +830,7 @@ Po jeho úpěšném průběhu je možné již používat doručená data v pamě
  
   Prvním přenášeným bitem komunikace je bit s~nejvyšší hodnotou (MSB), tedy bit "dat_reg(127)" na straně FPGA. Za předpokladu, že data pro přenos jsou v~Raspberry uchovávána v~poli charů a odpadnou tak problémy s~endianitou (instrukce ARMv6 jsou defaultně little-endian \fnote{ARMv6 Support for mixed-endian data \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0301h/Cdfbbchb.html}}), bude prvním přenášeným bitem MS bit v~"tx[0]". Pozice a funkce bitů v~přenosech z~Raspberry Pi do FPGA a v~opačném směru jsou zdokumentované v tabulce \ref[data_order1_tab] a \ref[data_order2_tab].
   
- \medskip \clabel[data_order1_tab]{Pořadí dat v~přenosu}
+ \medskip \clabel[data_order1_tab]{Pořadí dat v~přenosu A}
 \ctable{ccc}{ 
 	\hfil Bity & Byte přenosu & Funkce \crl
 		127 & tx[0] &Aktivace resetu AD převodníku \cr
@@ -796,7 +846,7 @@ Po jeho úpěšném průběhu je možné již používat doručená data v pamě
 \caption/t Přenos z~Raspberry Pi do FPGA obvodu 
 \medskip 
 
- \medskip \clabel[data_order2_tab]{Pořadí dat v~přenosu}
+ \medskip \clabel[data_order2_tab]{Pořadí dat v~přenosu B}
 \ctable{ccc}{ 
 	\hfil Bity & Byte přenosu & Funkce \crl
 		127 ..96 & rx[0] .. rx[3] & IRC \cr
@@ -844,7 +894,7 @@ Nutnost přecházet mezi stavy však neexistuje jen u~konfigurace převodníku a
 
 Konfiguraci řídicího slova a adresy kanálů všech tří fází ukazují tabulky \ref[ctrl_word_tab] a \ref[address_tab].
 
- \medskip \clabel[ctrl_word_tab]{Konfigurace řídícího slova}
+ \medskip \clabel[ctrl_word_tab]{Konfigurace řídícího slova ADC}
 \ctable{lcl}{ 
 	\hfil Bit & Hodnota &Funkce  \crl
 		7 (MSB) & 1 & Start bit \cr
@@ -856,7 +906,7 @@ Konfiguraci řídicího slova a adresy kanálů všech tří fází ukazují tab
 		1 & 0 & Power Down mód \cr
 		0 (LSB) & 0 & Power Down mód \cr
 }
-\caption/t Konfigurace řídícího slova 
+\caption/t Konfigurace řídícího slova ADC 
 \medskip 
 
  \medskip \clabel[address_tab]{Adresace kanálů ADC}
@@ -1151,33 +1201,63 @@ void alphabeta2pwm3(int32_t * pwma, int32_t * pwmb, int32_t *pwmc,
 
 Pro výpočet hodnot $\sin{\vartheta}$ a $\cos{\vartheta}$ je zde použita funkce z~knihovny {\em PXMC}, "void" "pxmc_sincos_fixed_inline(int32_t *sn, int32_t *cs, uint32_t x, int bit)". Jejím parametrem je, kromě počtu bitů vysledku, úhel $\vartheta$ (parametr "x"). Pro potřeby funkce je tak výstup IRC senzoru, který udává natočení motoru, převeden na cyklickou "uint32_t" logiku. Plný úhel $2\pi$ rad je zde ekvivalentní hodnotě $2^{32}$.
 
+Transformace napětí při delta zapojení vychází z rovnic \ref[u1_rce] až \ref[u3_rce]. Parametr $t$ je zde volen tak, aby nejmenší z napětí $u_1$ až $u_3$ bylo rovno nule. Její kód je následující:
+\begtt
+void transDelta(int32_t * u1, int32_t * u2, int32_t *u3,
+                int32_t ub , int32_t uc){
+    int32_t t;
 
+    /*vypocte napeti tak, aby odpovidaly rozdily*/
+    *u1=uc;
+    *u2=uc+ub;
+    *u3=0;
+    
+    /*najde zaporne napeti*/
+    t=min(*u1,*u2,*u3);
+    
+    /*dorovna zaporna napeti na nulu*/
+    *u1-=t;
+    *u2-=t;
+    *u3-=t;
+}
+\endtt
+Všechny tři kroky jsou provedeny takto:
 \ttline 0
 \begtt
 {
     uint32_t pos;
     int32_t sin, cos;
     int32_t alpha, beta;
-    int32_t pwma,pwmb,pwmc;
-    pos=rps.index_dist;           /*uhel natoceni 0-1999 z IRC*/
-    pos+=717;                     /*zarovnání fáze 'a' a osy 'alpha'*/
-    pos*=4294967;                 /*převod na 32-bit cyklickou logiku*/
+    int32_t ua,ub,uc;
+    int32_t ia,ib,ic;
+    int32_t u1,u2,u3;
+    pos=rps.index_dist;
+
+    pos+=960; /*zarovnani faze 'a' s osou 'alpha'*/
+
+    /*pro výpočet sin a cos je pouzita 32-bit cyklicka logika*/
+    pos*=4294967;
     pxmc_sincos_fixed_inline(&sin, &cos, pos, 16);
-    dq2alphabeta(&alpha, &beta,0,duty, sin, cos);		/*inverzni Park*/
-    alpha>>=16;						/*vydeleni po nasobeni goniometr. fcemi*/
+
+    dq2alphabeta(&alpha, &beta,0,duty, sin, cos);
+    alpha>>=16;
     beta>>=16;
-    alphabeta2pwm3(&pwma,&pwmb, &pwmc,alpha,beta);    /*inverzni Clark*/
-	\endtt
 
-Nyní je již jen nutné vypočtené hodnoty fází přiřadit jednotlivým PWM:
+    alphabeta2pwm3(&ia,&ib, &ic,alpha,beta);
+\endtt
+Na tomto místě by mělo být implementováno zpětnovazební řízení jednotlivých proudů za použití jejich naměřených hodnot. Pro jednoduchost je ale použita jen dopřednovazební regulace vycházející z rovnic \ref[rce1] až \ref[clark_napet_rce_3]:
 \begtt
-    if (pwma<0) pwma=0;
-    if (pwmb<0) pwmb=0;
-    if (pwmc<0) pwmc=0;
+    ua=ia;
+    ub=ib;
+    uc=ic;
+\endtt
+Nyní zbývá přepočítat fázová napětí a přiřadit jejich hodnoty šířce PWM:
+\begtt
+    transDelta(&u1,&u2, &u3,ub,uc);
 
-    rps.pwm1=(uint16_t)pwma;
-    rps.pwm3=(uint16_t)pwmb;
-    rps.pwm2=(uint16_t)pwmc;
+    rps.pwm1=(uint16_t)u1;
+    rps.pwm2=(uint16_t)u2;
+    rps.pwm3=(uint16_t)u3;
 }\endtt
 
 	
