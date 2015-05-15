@@ -419,9 +419,9 @@ Tímto způsobem byla transformační matice rozšířenana velikost 3x3. Matice
  
  \secc Transformace napětí při delta zapojení
  
- Pomocí iverzní Clarkovy transformace je lze vypočítat jednotlivé statorové proudy. Z rovnic \ref[rce1] až \ref[clark_napet_rce_3] pak vyplývá, že proudy je možné řídit napětím na vinutí. 
+ S využitím inverzní Clarkovy transformace lze vypočítat jednotlivé statorové proudy. Z rovnic \ref[rce1] až \ref[clark_napet_rce_3] pak vyplývá, že proudy je možné řídit napětím na vinutí. 
  
- Nyní je tedy třeba  napětí $u_a$, $u_b$ a $u_c$, které představují akční zásahy pro řízení proudů, přepočítat na napětí $u_1$, $u_2$ a $u_3$, která jsou již přímo úměrná šířce plnění PWM. Pro výpočet je uvažována zapojení typu \uv{delta}. Schématicky problém postihuje obrázek \ref[delta_obr]. 
+ Nyní je tedy třeba  napětí $u_a$, $u_b$ a $u_c$, které představují akční zásahy pro řízení proudů, přepočítat na napětí $u_1$, $u_2$ a $u_3$, která jsou již přímo úměrná šířce plnění PWM. Pro výpočet je uvažováno zapojení typu \uv{delta}, které je použito i při konstrukci použitého motoru, viz. sekce \ref[motor_sec]. Schématicky problém postihuje obrázek \ref[delta_obr]. 
  
  \medskip \clabel[delta_obr]{Delta zapojení}
 \picw=10cm \cinspic delta.pdf
@@ -461,7 +461,7 @@ $$
 	\label[u3_rce] u_3 &=t 
  & \eqmark \cr}
  $$
-Parametr $t$ je možné volit libovolně. 
+Parametr $t$ je možné volit libovolně. Implemetací se zabývá sekce \ref[vektor_impl_sec].
 
    
  
@@ -471,9 +471,10 @@ Parametr $t$ je možné volit libovolně.
  
  Budou tak popsány parametry použitého motoru a Raspberry Pi. Prostor bude věnován problematice OS Linux a jeho Real-Time modifikaci. Následně dojde na téma FPGA obvod a jeho naprogramování. Kapitola je ukončena sekcí o rozšiřující jednotce, která integruje všechny tyto komponenty do jedoho řešení.
  
+ \label[motor_sec]
  \sec Použitý motor
  
- Z~široké nabídky bezkartáčových PMS motorů byl vybrán model BLWR233D-36V-4000 od společnosti Aneheim Automation \fnote{Aneheim Automation BLWR23 \url{http://www.anaheimautomation.com/products/brushless/brushless-motor-item.php?sID=148&pt=i&tID=96&cID=22}} viz. Obrázek \ref[motor_obr]. Jedná se o~motor s~výkonem 92W, pracující při maximálním napětí 36V. Vinutí statoru tvoří 6 polpárů. Vinutí každé z~fází tedy tvoří právě dvě pólové dvojice. Analogicky má stator motoru právě dva polpáry, viz. Obrázek \ref[pole_pairs].
+ Z~široké nabídky bezkartáčových PMS motorů byl vybrán model BLWR233D-36V-4000 od společnosti Aneheim Automation \fnote{Aneheim Automation BLWR23 \url{http://www.anaheimautomation.com/products/brushless/brushless-motor-item.php?sID=148&pt=i&tID=96&cID=22}} viz. Obrázek \ref[motor_obr]. Jedná se o~motor s~výkonem 92W, pracující při maximálním napětí 36V. Vinutí statoru tvoří 6 polpárů  Vinutí každé z~fází tedy tvoří právě dvě pólové dvojice. Analogicky má stator motoru právě dva polpáry, viz. Obrázek \ref[pole_pairs].
  
 \medskip \clabel[motor_obr]{Použitý motor}
 \picw=8cm \cinspic motor.png
@@ -1191,11 +1192,11 @@ void dq2alphabeta(int32_t *alpha, int32_t *beta,
 
 Clarkova inverzní transformace je zde vytvořena pomocí \ref[inv_clark_num_rce], její kód je následující:
 \begtt
-void alphabeta2pwm3(int32_t * pwma, int32_t * pwmb, int32_t *pwmc,
+void alphabeta2pwm3(int32_t * ia, int32_t * ib, int32_t *ic,
                     int32_t alpha, int32_t beta){
-    *pwma=alpha;
-    *pwmb=-alpha/2+beta*887/1024;
-    *pwmc=-alpha/2-beta*887/1024;
+    *ia=alpha;
+    *ib=-alpha/2+beta*887/1024;
+    *ic=-alpha/2-beta*887/1024;
 }
 \endtt
 
@@ -1251,7 +1252,7 @@ Na tomto místě by mělo být implementováno zpětnovazební řízení jednotl
     ub=ib;
     uc=ic;
 \endtt
-Nyní zbývá přepočítat fázová napětí a přiřadit jejich hodnoty šířce PWM:
+Nyní zbývá přepočítat fázová napětí a podle jejich hodnot nastavit šířky plnění PWM:
 \begtt
     transDelta(&u1,&u2, &u3,ub,uc);
 
@@ -1262,6 +1263,38 @@ Nyní zbývá přepočítat fázová napětí a přiřadit jejich hodnoty šíř
 
 	
  \chap Závěr
+ 
+ \sec Záznamy průběhů PXMC
+ 
+ 
+  S využitím knihovny PXMC byly zachyceny některé průběhy statorových proudů a napětí. Průběh při nastavení pevné šírky plnění příkazem "PWMA:1000" je na obrázku \ref[prubehy_pwma1_obr].
+
+\medskip \clabel[prubehy_pwma1_obr]{Záznam průběhu při konfiguraci PWMA:1000}
+\picw=17cm \cinspic pwma1000_detail.png
+\caption/f Záznam průběhu při konfiguraci PWMA:1000 bez zatížení. Na svislé ose je vynesena pozice IRC, v grafu je vyznačena žlutozelenou barvou. 
+\medskip 
+  
+Detail průběhů napětí a proudů z obrázku \ref[prubehy_pwma1_obr] je na obrázku \ref[prubehy_pwma2_obr].
+ Z tohoto obrázku je také patrné, že první kanál ADC má o něco menší zesílení. Následná unalýza ukázala jako pravděpodobné, že dochází k nežádoucímu magnetickému rušení.
+ 
+ Senzory obsahují pro měření proudu jen necelý jeden závit zařazený mezi výkonovými piny. Obvody sice jsou odstíněné podle manuálu proti elektrostatickému rušení, ale ne proti magnetismu. Zde nastává problém, že proudy dalších dvou výkonových výstupů prochází v blízkosti obvodu příslušného měřené fázi . Magnetické pole kolem \uv{přímého} vodiče se tak značně promítá do blízkého obvodu. Přitom podle geometrie jednotlivých vodičů je ovlivnění různé. 
+ 
+ Aby byly takto naměřené hodnoty použitelné pro regulaci, bylo by nutné provést analýzu metody kalibrace, která by eliminovala vzájemné ovlivnění. Přitom vzhledem k tomu, že soustava tří proudů je přeurčená, viz rovnice \ref[soucet_nula_rce], postačují pouze dvě přesně měřené hodnoty. Třetí hodnotu, byť změřenou nepřesně, je možné za jistých předpokladů, použít ke zpřesnění výpočtu. 
+  
+\medskip \clabel[prubehy_pwma2_obr]{Záznam průběhu při konfiguraci PWMA:1000. Detail.}
+\picw=17cm \cinspic pwma1000_detail2.png
+\caption/f Záznam průběhu při konfiguraci PWMA:1000 bez zatížení. Tečkované hodnoty jsou šířky plnění PWM. Slabší, modré, červené a zelené průběhy jsou naměřené proudy. 
+\medskip 
+ 
+ Na obrázku \ref[prubehy_1] je zachycen průběh při řízení rychlosti. Byl použit příkaz "SPDA:1000". Do hodnoty 1500 na vodorovné, časové ose je motor nezatížen. Dále od této hodnoty pak dochází k postupnému narůstání zátěže.
+  
+ \medskip \clabel[prubehy_1]{Záznam průběhu při konfiguraci SPDA:1000}
+\picw=17cm \cinspic spda1000_detail.png
+\caption/f Záznam průběhu při konfiguraci SPDA:1000 a následném zatížení
+\medskip 
+ 
+
+\sec Závěrečné hodnocení
  
 Cílem  práce  je  realizovat řízení pro  synchronní bezkartáčové motory s~využitím jednodeskového počítače Raspberry Pi a Linuxu. To vše při použití rozšiřující jednotky intergrující výkonový hardware a FPGA obvod.
   
@@ -1287,7 +1320,7 @@ Cílem  práce  je  realizovat řízení pro  synchronní bezkartáčové motory
  \bibchap
  \usebib/c (simple) mybase
 
-\app Zadání
+\app DVD
 
  \sec pokyny
  
