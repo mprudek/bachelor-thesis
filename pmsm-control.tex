@@ -461,7 +461,7 @@ $$
 	\label[u3_rce] u_3 &=t 
  & \eqmark \cr}
  $$
-Parametr $t$ je možné volit libovolně. Implemetací se zabývá sekce \ref[vektor_impl_sec].
+Parametr $t$ je volen libovolně. Implemetací se zabývá sekce \ref[vektor_impl_sec].
 
    
  
@@ -1001,7 +1001,7 @@ Veličiny s~příponou "_prev" jsou pak veličiny zpožděné o~jeden hodinový 
 
 Aby bylo možné plně využívat možností, které nabízí RT-rozšíření jádra Linux, je nutné v~uživatelském kódu dodržovat některá základní pravidla. K~těmto pravidlům patří například použití RT plánovací strategie nebo správné nastavení priorit vláken v~rámci plánovače \cite[rt-wiki]. Implementaci těchto požadavků se věnuje právě tato sekce.
 
-\secc Nasatvení priority a plánovací strategie
+\secc Nastavení priority vlákna a plánovací strategie
 
 Jádro OS Linux implementuje pět různých plánovacích strategií. Strategie "SCHED_FIFO", "SCHED_RR" a "SCHED_OTHER" jsou definovány standartem POSIX, "SCHED_BATCH" a "SCHED_IDLE" jsou pak pro systém specifické. Pro plánování každého vlákna aplikace může být zvolena libovolná z nich.
 
@@ -1291,6 +1291,24 @@ Detail průběhů napětí a proudů z obrázku \ref[prubehy_pwma1_obr] je na ob
  \medskip \clabel[prubehy_1]{Záznam průběhu při konfiguraci SPDA:1000}
 \picw=17cm \cinspic spda1000_detail.png
 \caption/f Záznam průběhu při konfiguraci SPDA:1000 a následném zatížení
+\medskip 
+
+\sec Záznamy průběhů testovací aplikací
+
+V rámci testovací aplikace je implementováno poziční řízení s P regulátorem a řízení rychlosti s využitím PI regulátoru. Průběžné hodnoty rychlosti, měřených proudů a šířek plnění PWM jsou vzorkovány jednou za 2 cyly řídicí smyčky. Následně jsou uloženy do souboru "logs.log" a v textové formě zpracovány v programu MATLAB. Na obrázku  \ref[t_prubehy_1] je odezva systému na změnu pevně volené šířky plnění z 0 na 100.
+ \medskip \clabel[t_prubehy_1]{Záznam průběhu při odezvě na změnu pevné šířky plnění}
+\picw=16cm \cinspic duty100_step.pdf
+\caption/f Záznam průběhu při odezvě na změnu pevné šířky plnění. Konfigurace duty:1000.
+\medskip 
+Na obrázku \ref[t_prubehy_2] je zaznamenán průběh řízení rychlosti. Konkrétně pak odezva na změnu požadované rychlosti z 0 na 100. Obrázek \ref[t_prubehy_3] pak zachycuje řízení rychlosti na hodnotu 100 s postupně se zvyšující zátěží.
+
+ \medskip \clabel[t_prubehy_2]{Záznam průběhu řízení rychlosti při odezvě na změnu požadované rychlosti}
+\picw=14.5cm \cinspic spda100_step.pdf
+\caption/f Záznam průběhu řízení rychlosti při odezvě na změnu požadované rychlosti z 0 na 100. Konfigurace spd:100.
+\medskip 
+ \medskip \clabel[t_prubehy_3]{Záznam průběhu řízení rychlosti při zvyšujícím se zatížení.}
+\picw=14.5cm \cinspic spda100_step_load.pdf
+\caption/f Záznam průběhu řízení rychlosti při zvyšujícím se zatížení. Konfigurace spd:100.
 \medskip 
  
 
