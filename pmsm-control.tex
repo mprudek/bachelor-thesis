@@ -1340,19 +1340,24 @@ Cílem  práce  je  realizovat řízení pro  synchronní bezkartáčové motory
 
 \app DVD
 
- \sec pokyny
- 
-Na platformě procesorové desky Raspberry Pi implementujte systém pro řízení bezkartáčových (BLDC/PMSM) motorů.
+Součástí přiloženého DVD jsou následující položky:
 
-1. Pro komunikaci procesorového systému s~výkonovým hardwarem realizovaným s~využitím programovatelného obvodu (FPGA) vyberte vhodný protokol a periferii.
+\begitems
 
-2. Pro vybraný způsob komunikace navrhněte ovladač na straně jádra Linux a obvodový návrh ve VHDL na straně FPGA.
+*Text této práce "Bp_2015_prudek_martin.pdf".
 
-3. Integrujte bloky pro snímání polohy, řízení výkonových stupňů a měření proudu do FPGA návrhu.
+*Kód VHDL a skripty pro syntézu a programování FPGA obvodu v adresáři "pmsm-control/".
 
-4. S~využitím navržených periferií realizujte řízení bezkartáčového motoru.
+*Zdrojové kódy testovací aplikace v adesáři "pmsm-control/test_sw/".
 
-5. Vyžaduje se podrobná technická dokumentace včetně přípravy podkladů pro prezentaci včetně videozáznamu.
+*Skript pro vizualizaci průběhů naměřených testovací aplikací, uložený v souboru
+"pmsm-control/test_sw/tools/readLogs.m"
+
+\enditems
+
+Text této práce ve formě zdrojového kódu je dále volně přístupny na serveru {\em GitHub}. Práci je možné stáhnou příkazem "git clone http://github.com/wargarw/bp". Vysázení je prováděno příkazem "make".
+
+
 
 \app Zkratky\par \makeglos %vlozi novou prilohu
 
