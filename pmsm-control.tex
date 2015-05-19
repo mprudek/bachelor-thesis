@@ -17,17 +17,17 @@
  \specification {\picw=16.6cm \cinspic zadani.pdf }
  
  
- \abstractEN {Bachelor thesis is focused on control of permanent magnet synchronous motors (PMSM) with single-board computer Raspberry Pi and Linux. For this purpose expansion unit which integrates power management and field-programmable gate array (FPFA) is used.
+ \abstractEN {This bachelor thesis is focused on the control of permanent magnet synchronous motors (PMSM) with a single-board computer Raspberry Pi and Linux. For this purpose an expansion unit which integrates power management and a field-programmable gate array (FPFA) is used.
  
- The first part of thesis deals with theory of PMSM, including their construction, mathematical description and possibilities of control. After this, presentation of used hardware, Raspberry Pi, expansion unit and motor takes place.
+ The first part of thesis deals with theory of PMSM, including their construction, mathematical description and possibilities of control. The presentation of the hardware used, Raspberry Pi, expansion unit and motor takes place afterwards.
  
- Thesis continues with description of operating system GNU/Linux and its Real-Time modification.
+ The thesis continues with a description of the operating system GNU/Linux and its Real-Time modification.
  
- To fulfil communication between expansion unit and superior system protocol SPI is used. Its implementation in FPGA and Raspberry Pi is described in next chapter.
+ SPI protocol is used for communication between the expansion unit and its superior system. Its implementation in FPGA and Raspberry Pi is described in next chapter.
  
- For the purpose of measure currents in stator windings is used solution which takes advantage of Hall effect. Voltages, that are obtained this way are then processed with A/D converter. To read values from A/D converter simple communication protocol is implemented in FPGA.    
+ The solution, which takes advantage of Hall Effect, is used to measure currents in stator windings. Voltages that are obtained this way are then processed with A/D converter.A simple communication protocol to read values from A/D converter is implemented in FPGA .    
  
- The last part of the thesis examines multiple possibilities of electronic commutation. Commutation that utilizes only outcome of Hall effect sensors and simple commutation that carry out phase shift by $120^\circ$ are implemented. In the very end the vector control of PMSM is presented.
+ The last part of the thesis examines multiple possibilities of electronic commutation. Commutation that utilizes only the output of Hall Effect sensors and simple commutation that carry out phase shift by $120^\circ$ are implemented. The concept of vector control of PMSM is presented at the very end of the thesis.
     }
  
  \abstractCZ {Bakalářská práce se zabývá řízením bezkartáčových synchronních motorů (PMSM) s~deskou Raspberry Pi a Linuxem. K~tomuto účelu je použita rozšiřující jednotka integrující část pro výkonové řízení a programovatelné hradlové pole (FPGA). 
@@ -1326,7 +1326,7 @@ Cílem  práce  je  realizovat řízení pro  synchronní bezkartáčové motory
   
   Pro možnou realizaci plného momentového řízení a řízení bez polohových senzorů (sensorless control) je nezbyná znalost proudů, protékajících vinutím statoru. Jejich snímaní je prováděno s~využitím Hallova jevu. Napětí, takto získané je převáděno 12-bitovým AD převodníkem. Zde bylo provedeno zpřesnění snímání tohoto napětí. Nyní je místo jedné odečtené hodnoty posílán řídicí jednotce jejich výběrový průměr. Toto řešeni vedlo k~redukci šumu a tím krozšíření přesnosti naměřených hodnot.
   
-  Vlastní sekce je věnována implementaci požadavků a algoritmickým konstrukcím, které musejí být dodrženy v~řídicí aplikaci využívající RT-rozšíření jádra Linux. Lze konstatovat, že bez jejich naplnění nelze uživatelské aplikaci garantovat deterministické chování. Samotná aplikace RT-rozšíření tak způsobí pouze prodloužení průměrného času odezvy na vnější událost, aniž by přinášela jakékoli výhody.
+  Vlastní sekce je věnována implementaci požadavků a programovým konstrukcím, které musejí být dodrženy v~řídicí aplikaci využívající RT-rozšíření jádra Linux. Lze konstatovat, že bez jejich naplnění nelze uživatelské aplikaci garantovat deterministické chování. Samotná aplikace RT-rozšíření tak způsobí pouze prodloužení průměrného času odezvy na vnější událost, aniž by přinášela jakékoli výhody.
   
   Pro výukové účely jsou implementovány dvě jednoduché metody elektronické komutace. Při použití komutace využívající jen výstup z~Hallových sond dochází k~nežádoucím vibracím motoru. Jedná se ale o~jedinou možnost, pokud nemáme k~dispozici přesnou hodnotu natočení rotoru v~rámci celého rozsahu otáčeni nebo dostatečně přesné měření proudu.
   
