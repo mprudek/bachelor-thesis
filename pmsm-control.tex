@@ -25,7 +25,7 @@
  
  SPI protocol is used for communication between the expansion unit and its superior system. Its implementation in FPGA and Raspberry Pi is described in next chapter.
  
- The solution, which takes advantage of Hall Effect, is used to measure currents in stator windings. Voltages that are obtained this way are then processed with A/D converter.A simple communication protocol to read values from A/D converter is implemented in FPGA .    
+ The solution, which takes advantage of Hall Effect, is used to measure currents in stator windings. Voltages that are obtained this way are then processed with A/D converter. A simple communication protocol to read values from A/D converter is implemented in FPGA .    
  
  The last part of the thesis examines multiple possibilities of electronic commutation. Commutation that utilizes only the output of Hall Effect sensors and simple commutation that carry out phase shift by $120^\circ$ are implemented. The concept of vector control of PMSM is presented at the very end of the thesis.
     }
@@ -1295,20 +1295,39 @@ Detail průběhů napětí a proudů z~obrázku \ref[prubehy_pwma1_obr] je na ob
 
 \sec Záznamy průběhů testovací aplikací
 
-V~rámci testovací aplikace je implementováno poziční řízení s~P regulátorem a řízení rychlosti s~využitím PI regulátoru. Průběžné hodnoty rychlosti, měřených proudů a šířek plnění PWM jsou vzorkovány jednou za 2 cyly řídicí smyčky. Následně jsou uloženy do souboru "logs.log" a v~textové formě zpracovány v~programu MATLAB. Na obrázku  \ref[t_prubehy_1] je odezva systému na změnu pevně volené šířky plnění z~0 na 100.
+
+Průběžné hodnoty rychlosti, měřených proudů a šířek plnění PWM jsou vzorkovány jednou za 2 cyly řídicí smyčky. Následně jsou uloženy do souboru "logs.log" a v~textové formě zpracovány v~programu MATLAB. Na obrázku  \ref[t_prubehy_1] je odezva systému na změnu pevně volené šířky plnění z~0 na 100.
+ 
  \medskip \clabel[t_prubehy_1]{Záznam průběhu při odezvě na změnu pevné šířky plnění}
 \picw=16cm \cinspic duty100_step.pdf
-\caption/f Záznam průběhu při odezvě na změnu pevné šířky plnění. Konfigurace duty:1000.
+\caption/f Záznam průběhu při odezvě na změnu pevné šířky plnění. Konfigurace duty:100.
 \medskip 
-Na obrázku \ref[t_prubehy_2] je zaznamenán průběh řízení rychlosti. Konkrétně pak odezva na změnu požadované rychlosti z~0 na 100. Obrázek \ref[t_prubehy_3] pak zachycuje řízení rychlosti na hodnotu 100 s~postupně se zvyšující zátěží.
+
+V~rámci testovací aplikace je implementováno poziční řízení s~P regulátorem a řízení rychlosti s~využitím PI regulátoru. 
+
+Pro návrh jednoduchého PI regulátoru rychlosti je použit nástroj {\em rltool} z prostředí MATLAB. Jako model systému je pro první přiblížení zvolena aproximace systémem prvního řádu, tedy proložení exponenciálou. Odezva na jednotkový skok nástroje {\em rltool } je na obrázku \ref[t_rltool2]. Záznam reálnéhho průběhu řízení z požadované rychlosti 0 na 100 je na obrázku \ref[t_prubehy_rlt].
+
+\medskip \clabel[t_rltool2]{Grafický výstup nástroje {\em rltool} prostředí MATLAB}
+\picw=11cm \cinspic rltool2.pdf
+\caption/f Grafický výstup nástroje {\em rltool} prostředí MATLAB. Odezva na jednotkový skok.
+\medskip 
+
+ \medskip \clabel[t_prubehy_rlt]{Záznam průběhu řízení rychlosti při odezvě na změnu požadované rychlosti}
+\picw=14.5cm \cinspic rlt_spd_100_step.pdf
+\caption/f Záznam průběhu řízení rychlosti při odezvě na změnu požadované rychlosti z~0 na 100. Konfigurace spd:100. Regulutátor navržený pomocí {\em rltool}.
+\medskip 
+
+Hodnoty PI regulátoru jsou následně upraveny tak, aby bylo zmírněno rozkmitání systému. 
+Na obrázku \ref[t_prubehy_2] je zaznamenán průběh řízení rychlosti upraveného regulátoru. Konkrétně pak odezva na změnu požadované rychlosti z~0 na 100. Obrázek \ref[t_prubehy_3] pak zachycuje řízení rychlosti na hodnotu 100 s~postupně se zvyšující zátěží.
 
  \medskip \clabel[t_prubehy_2]{Záznam průběhu řízení rychlosti při odezvě na změnu požadované rychlosti}
 \picw=14.5cm \cinspic spda100_step.pdf
-\caption/f Záznam průběhu řízení rychlosti při odezvě na změnu požadované rychlosti z~0 na 100. Konfigurace spd:100.
+\caption/f Záznam průběhu řízení rychlosti při odezvě na změnu požadované rychlosti z~0 na 100. Konfigurace spd:100. Upravený regulátor.
+
 \medskip 
  \medskip \clabel[t_prubehy_3]{Záznam průběhu řízení rychlosti při zvyšujícím se zatížení.}
 \picw=14.5cm \cinspic spda100_step_load.pdf
-\caption/f Záznam průběhu řízení rychlosti při zvyšujícím se zatížení. Konfigurace spd:100.
+\caption/f Záznam průběhu řízení rychlosti při zvyšujícím se zatížení. Konfigurace spd:100. Upravený regulátor.
 \medskip 
  
 
