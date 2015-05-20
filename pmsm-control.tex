@@ -1261,7 +1261,11 @@ Nyní zbývá přepočítat fázová napětí a podle jejich hodnot nastavit š�
     rps.pwm3=(uint16_t)u3;
 }\endtt
 
+\secc Řízení rychlosti
+
+Pro řízení rychlosti motoru byl v rámci testovaci aplikace navržen jednoduchý PI regulátor pomocí nástroje {\em rltool} z prostředí MATLAB. Naměřené průběhy této regulace jsou uvedeny v sekci \ref[zazn_test_sec].
 	
+	\label[zaver_chap]
  \chap Závěr
  
  \sec Záznamy průběhů PXMC
@@ -1270,33 +1274,33 @@ Nyní zbývá přepočítat fázová napětí a podle jejich hodnot nastavit š�
   S~využitím knihovny PXMC byly zachyceny některé průběhy statorových proudů a napětí. Průběh při nastavení pevné šírky plnění příkazem "PWMA:1000" je na obrázku \ref[prubehy_pwma1_obr].
 
 \medskip \clabel[prubehy_pwma1_obr]{Záznam průběhu při konfiguraci PWMA:1000}
-\picw=17cm \cinspic pwma1000_detail.png
+\picw=17cm \cinspic pwma1000_detail.pdf
 \caption/f Záznam průběhu při konfiguraci PWMA:1000 bez zatížení. Na svislé ose je vynesena pozice IRC, v~grafu je vyznačena žlutozelenou barvou. 
 \medskip 
   
 Detail průběhů napětí a proudů z~obrázku \ref[prubehy_pwma1_obr] je na obrázku \ref[prubehy_pwma2_obr].
- Z~tohoto obrázku je také patrné, že první kanál ADC má o~něco menší zesílení. Následná unalýza ukázala jako pravděpodobné, že dochází k~nežádoucímu magnetickému rušení.
+ Z~tohoto obrázku je také patrné, že jeden z měřených proudů má o~něco menší zesílení (suma změřených proudů není nulová). Následná unalýza ukázala jako pravděpodobné, že při měření proudů dochází k~nežádoucímu magnetickému rušení.
  
  Senzory obsahují pro měření proudu jen necelý jeden závit zařazený mezi výkonovými piny. Obvody sice jsou odstíněné podle manuálu proti elektrostatickému rušení, ale ne proti magnetismu. Zde nastává problém, že proudy dalších dvou výkonových výstupů prochází v~blízkosti obvodu příslušného měřené fázi . Magnetické pole kolem \uv{přímého} vodiče se tak značně promítá do blízkého obvodu. Přitom podle geometrie jednotlivých vodičů je ovlivnění různé. 
  
- Aby byly takto naměřené hodnoty použitelné pro regulaci, bylo by nutné provést analýzu metody kalibrace, která by eliminovala vzájemné ovlivnění. Přitom vzhledem k~tomu, že soustava tří proudů je přeurčená, viz rovnice \ref[soucet_nula_rce], postačují pouze dvě přesně měřené hodnoty. Třetí hodnotu, byť změřenou nepřesně, je možné za jistých předpokladů, použít ke zpřesnění výpočtu. 
+ Aby byly takto naměřené hodnoty použitelné pro regulaci, bylo by nutné provést analýzu metody kalibrace, která by eliminovala vzájemné ovlivnění. Přitom vzhledem k~tomu, že soustava tří proudů je přeurčená, viz rovnice \ref[soucet_nula_rce], postačují pouze dvě přesně měřené hodnoty. Třetí hodnotu, byť změřenou nepřesně, je možné za jistých předpokladů, použít ke zpřesnění výpočtu. V rámci této práce nebyla kalibrace z časových důvodů provedena.
   
 \medskip \clabel[prubehy_pwma2_obr]{Záznam průběhu při konfiguraci PWMA:1000. Detail.}
-\picw=17cm \cinspic pwma1000_detail2.png
+\picw=17cm \cinspic pwma1000_detail2.pdf
 \caption/f Záznam průběhu při konfiguraci PWMA:1000 bez zatížení. Tečkované hodnoty jsou šířky plnění PWM. Slabší, modré, červené a zelené průběhy jsou naměřené proudy. 
 \medskip 
  
  Na obrázku \ref[prubehy_1] je zachycen průběh při řízení rychlosti. Byl použit příkaz "SPDA:1000". Do hodnoty 1500 na vodorovné, časové ose je motor nezatížen. Dále od této hodnoty pak dochází k~postupnému narůstání zátěže.
   
  \medskip \clabel[prubehy_1]{Záznam průběhu při konfiguraci SPDA:1000}
-\picw=17cm \cinspic spda1000_detail.png
+\picw=17cm \cinspic spda1000_detail.pdf
 \caption/f Záznam průběhu při konfiguraci SPDA:1000 a následném zatížení
 \medskip 
 
+\label[zazn_test_sec]
 \sec Záznamy průběhů testovací aplikací
 
-
-Průběžné hodnoty rychlosti, měřených proudů a šířek plnění PWM jsou vzorkovány jednou za 2 cyly řídicí smyčky. Následně jsou uloženy do souboru "logs.log" a v~textové formě zpracovány v~programu MATLAB. Na obrázku  \ref[t_prubehy_1] je odezva systému na změnu pevně volené šířky plnění z~0 na 100.
+Možnost vytvořit záznam o průběhu řízení je implementována i v~testovací aplikaci. Průběžné hodnoty rychlosti, měřených proudů a šířek plnění PWM jsou vzorkovány jednou za 2 cyly řídicí smyčky. Následně jsou uloženy do souboru "logs.log" a v~textové formě zpracovány v~programu MATLAB. Na obrázku  \ref[t_prubehy_1] je odezva systému na změnu pevně volené šířky plnění z~0 na 100.
  
  \medskip \clabel[t_prubehy_1]{Záznam průběhu při odezvě na změnu pevné šířky plnění}
 \picw=16cm \cinspic duty100_step.pdf
@@ -1305,7 +1309,7 @@ Průběžné hodnoty rychlosti, měřených proudů a šířek plnění PWM jsou
 
 V~rámci testovací aplikace je implementováno poziční řízení s~P regulátorem a řízení rychlosti s~využitím PI regulátoru. 
 
-Pro návrh jednoduchého PI regulátoru rychlosti je použit nástroj {\em rltool} z prostředí MATLAB. Jako model systému je pro první přiblížení zvolena aproximace systémem prvního řádu, tedy proložení exponenciálou. Odezva na jednotkový skok nástroje {\em rltool } je na obrázku \ref[t_rltool2]. Záznam reálnéhho průběhu řízení z požadované rychlosti 0 na 100 je na obrázku \ref[t_prubehy_rlt].
+Pro návrh jednoduchého PI regulátoru rychlosti je použit nástroj {\em rltool} z prostředí MATLAB. Jako model systému je pro první přiblížení zvolena aproximace systémem prvního řádu, tedy proložení exponenciálou. Odezva na jednotkový skok nástroje {\em rltool } je na obrázku \ref[t_rltool2]. Záznam reálného průběhu řízení z požadované rychlosti 0 na 100 je na obrázku \ref[t_prubehy_rlt].
 
 \medskip \clabel[t_rltool2]{Grafický výstup nástroje {\em rltool} prostředí MATLAB}
 \picw=11cm \cinspic rltool2.pdf
@@ -1334,7 +1338,7 @@ Hodnoty PI regulátoru jsou následně upraveny tak, aby bylo zmírněno kmitán
  
 Cílem  práce  je  realizovat řízení pro  synchronní bezkartáčové motory s~využitím jednodeskového počítače Raspberry Pi a Linuxu. To vše při použití rozšiřující jednotky intergrující výkonový hardware a FPGA obvod.
   
-  V~první  části  práce  jsou  prezentovány  základy  vlastní konstrukce synchronního  bezkartáčového motoru,  princip  jeho  činnosti  a základní matematický popis. Jako vhodné matematické  nástroje jsou zde uvedeny Clarkova a Parkova transformace.
+  V~první  části  práce  jsou  prezentovány  základy  vlastní konstrukce synchronního  bezkartáčového motoru,  princip  jeho  činnosti  a základní matematický popis. Jako vhodné matematické  nástroje jsou zde zvoleny Clarkova a Parkova transformace.
   
   Další kapitola podrobně popisuje použitý hadrware. Je zde věnován prostor motoru a jeho parametrům, rozšiřující jednotce nebo RPi a jeho vlastnostem. Zvláštní pozornost se dostala nasazení víceúčelového operačního systému GNU/Linux, a jeho RT-rozšíření, pro realizaci zpětvovazebního řízení. Bylo tak potvrzeno, že tento systém je použitelný a vhodný pro zadanou práci a je tak možné ho doporučit k~podobným účelům. 
   
@@ -1348,7 +1352,7 @@ Cílem  práce  je  realizovat řízení pro  synchronní bezkartáčové motory
   
   Pro výukové účely jsou implementovány dvě jednoduché metody elektronické komutace. Při použití komutace využívající jen výstup z~Hallových sond dochází k~nežádoucím vibracím motoru. Jedná se ale o~jedinou možnost, pokud nemáme k~dispozici přesnou hodnotu natočení rotoru v~rámci celého rozsahu otáčeni nebo dostatečně přesné měření proudu.
   
-   S~přesnou znalostí polohy je možné provádět komutaci založenou na fázovém posunu všech fází o~$120^\circ$ a realizovat tak jednoduché napěťové řízení.
+   S~přesnou znalostí polohy je možné provádět komutaci založenou na fázovém posunu všech fází o~$120^\circ$ a realizovat tak jednoduché napěťové řízení. Toto je pak možné rozšířit a s~využitím matematických postupů, popsaných výše, implementovat vektorové řízení. V rámci vektorového řízení bylo realizováno řízení rychlosti a polohy s~využitím PI a P regulátorů.
   
    
  
