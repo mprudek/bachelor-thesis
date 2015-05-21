@@ -100,7 +100,7 @@ Na rozdíl od kartáčových motorů je komutace PMS motorů řízena elektronic
  
  Základ konstrukce PMS Motoru tvoří rotor s~permanentním magnetem a stator, kterým prochází vinutí jednotlivých fází. 
  
- Počet vinutí pak závisí na počtu pólů permanentního magnetu umístěného ve statoru. Obvyklá varianta jsou dva páry pólů (polpáry) permanentního magnetu, viz Obrázek \ref[pole_pairs]. Celý návrh je přitom optimalizován pro buzení sinusovým průběhem, stejně tak zpětné  elktromotorické napětí vykazuje sinusový průběh. \cite[ijetae] \cite[ti_pmsm].
+ Počet vinutí pak závisí na počtu pólů permanentního magnetu umístěného ve statoru. Obvyklá varianta jsou dva páry pólů (polpáry) permanentního magnetu, viz. obrázek \ref[pole_pairs]. Celý návrh je přitom optimalizován pro buzení sinusovým průběhem, stejně tak zpětné  elktromotorické napětí vykazuje sinusový průběh. \cite[ijetae] \cite[ti_pmsm].
  
 \medskip \clabel[pole_pairs]{PMS Motor se dvěma pólovými dvojicemi}
 \picw=7cm \cinspic PMSM.png
@@ -519,7 +519,7 @@ Parametr $t$ je volen libovolně. Implemetací se zabývá sekce \ref[vektor_imp
 \caption/t Vodiče přivedené do motoru 
 \medskip 
   
-  K~motoru je též z~jedné strany namontován inkrementální rotační čítač (dále jen IRC), který měří přírůstky polohy motoru vůči pozici při startu řízení. Jeho výhodou je vysoká přesnost.  Zatímco Hallovy sondy dokáží rozlišit jen mezi 12 polohami na jednu mechanickou otáčku, použitý IRC rozezná 2000 samostatných pozic (běžné hodnoty rozlišení tohoto typu senzorů se pohybují v~rozmezí 16 až 10000 bodů na otáčku). K~IRC vedou vodiče napájení a vodiče přenášející informaci o~poloze. Dva z~těchto vodičů nesou signály, z jejichž aktuálních stavů a jejich změn je možné vypočítat rychlost pohybu motoru a jeho směr. Třetí signál pak vyšle puls vždy jen v~jedné pozici za jednu mechanickou otáčku motoru. Poskytuje tak referenční, absolutní polohu.
+  K~motoru je též z~jedné strany namontován inkrementální rotační senzor (dále jen IRC), který měří přírůstky polohy motoru vůči pozici při startu řízení. Jeho výhodou je vysoká přesnost.  Zatímco Hallovy sondy dokáží rozlišit jen mezi 12 polohami na jednu mechanickou otáčku, použitý IRC rozezná 2000 samostatných pozic (běžné hodnoty rozlišení tohoto typu senzorů se pohybují v~rozmezí 16 až 10000 bodů na otáčku). K~IRC vedou vodiče napájení a vodiče přenášející informaci o~poloze. Dva z~těchto vodičů nesou signály, z jejichž aktuálních stavů a jejich změn je možné vypočítat rychlost pohybu motoru a jeho směr. Třetí signál pak vyšle puls vždy jen v~jedné pozici za jednu mechanickou otáčku motoru. Poskytuje tak referenční, absolutní polohu.
   
  
 
@@ -585,7 +585,7 @@ FPGA obvody (Field Programmable Gate Array - Programovatelná hradlová pole) js
 
 FPGA se v~současnosti využívají v~mnoha aplikacích. Těží tak svých vlastností, mezi které patří poměrně snadný návrh v~některém z~HDL jazyků či grafických nástrojů. Flexibilita, neustále klesající cena ale i zmenšující se spotřeba elektrické energie patří mezi další pozitiva. Jsou tak zajímavou alternativou pro návrh a výrobu integrovaného obvodu na míru, jehož zavedení do výroby bývá velmi nákladné s~návratností při výrobě miliónů kusů. Další běžnou oblastí použití je prototypování složitějších zařízení či tvorba periferií pro procesorové jednotky - tzv. \uv{Glue logic}. Složitější FPGA obvody je dokonce možné použít k~implementaci procesoru.\cite[fpga_proc]  \cite[xilinx_fpga] \cite[bart_dis]
 
-Pro tuto práci byl vybrán FPGA obvod od společnosti {\em Microsemi Corporation} \fnote{Microsemi Corporation \url{http://www.microsemi.com/}} z~rodiny IGLOO. Konkrétně čip AGL125 v~pouzdře VQ100. Tato jednotka obsahuje 125 tisíc hradel a nabízí mimo jiné 36 kbits RAM. Podporuje In System Programming (ISP) a lze naprogramovat prostřednictvím rozhraní JTAG \cite[AGL125]. 
+Pro tuto práci byl vybrán FPGA obvod od společnosti {\em Microsemi Corporation} \fnote{Microsemi Corporation \url{http://www.microsemi.com/}} z~rodiny IGLOO. Konkrétně čip AGL125 v~pouzdře VQ100. Tato jednotka obsahuje 125 tisíc hradel a nabízí mimo jiné 36 kilobitů RAM. Podporuje In System Programming (ISP) a lze naprogramovat prostřednictvím rozhraní JTAG \cite[AGL125]. 
 
 Na rozdíl od větších a výkonnějších obvodů Xilinx a Altera zde dochází k~uložení konfigurace přímo do obvodu a není ji tak třeba nahrávat z~externí FLASH či z~CPU. Taktéž poměr ceny a kvality produktu je příznivý. Pro inicializaci hodnot v~obvodu při zapnutí napájení pak může být využit externí signál. Výhodným řešením může být i využití resetu z~bloku fázového závěsu (PLL), které je implementováno i v~této práci. Bez implementace tohoto mechanismu je ale třeba brát na zřetel hrozbu inicicializace na nevhodné hodnoty. Přikládem jsou signály pro ovládání polovičních H-můstků, které, při inicializaci na logickou jedničku mohou zapříčinit přehřátí a zničení motoru.  
 
@@ -602,7 +602,7 @@ Pro syntézu kódu je používán balíček aplikací {\em Libero} (viz. Manuál
 -l /home/user/license.log
 \endtt
 
-Samotná syntéza je pak řízena skripty v~jazyce TCL. Zvlášť je použit skript pro analýzu a syntézu logiky a skript pro vlastní umístění logiky do jednotlivých elementů obvodu programem "synplify_pro", který je součástí balíčku staženého s~aplikací Libero. Oba kroky syntézy jsou pak společně volané shellovým skriptem "synthetize-agl.sh".  Všechny soubory VHDL, včetně nejvyšší entity, musí být uvedené v~souboru "syn.tcl" a při syntéze musí být umístěné v~spolu s~shellovým skriptem v~jednom adresáři.
+Samotná syntéza je pak řízena skripty v~jazyce TCL. Zvlášť je použit skript pro analýzu a syntézu logiky a skript pro vlastní umístění logiky do jednotlivých elementů obvodu. Oba kroky syntézy jsou pak společně volané shellovým skriptem "synthetize-agl.sh".  Všechny soubory VHDL, včetně nejvyšší entity, musí být uvedené v~souboru "syn.tcl" a při syntéze musí být umístěné v~spolu s~shellovým skriptem v~jednom adresáři.
 
 Pro naprogramování FPGA obvodu je využívána open-source aplikace  {\em UrJTAG} hostovaná na serveru {\em Sourceforge} \fnote{UrJTAG, Sourceforge.net \url{http://sourceforge.net/projects/urjtag/}}. Pro běh aplikace je nutné mít nainstalovány knihovny "libusb" a "libftdi". Poté je  možné FPGA obvod naprogramovat spuštěním skriptu "program-agl.sh" ze stejného adresáře, ve kterém proběhla syntéza.
 
@@ -613,7 +613,7 @@ Rozšiřující jednotka k~RPi je tvořena dvojicí plošných spojů vyvinutýc
   
 Výkonové řízení motoru realizuje trojice polovičních H-můstků tvořených vždy dvojicí výkonových N-MOS trazistorů. Každá dvojice/půlmůstek je řízená integrovaným obvodem řady LT1158 \fnote{Half Bridge N-Channel Power MOSFET Driver \url{http://cds.linear.com/docs/en/datasheet/1158fb.pdf}}. Vstupy těchto budičů jsou již ovládány přímo z~FPGA.
 
-Pro měření proudů protékajících jednotlivými fázemi motoru je použita sada senzorů využívajících Hallova efektu. K~odečítání napěťové úrovně senzorů je určen 12-bitový AD převodník \fnote{ ADS7841 \url{http://www.ti.com/lit/ds/symlink/ads7841.pdf}}. Tento integrovaný obvod je vybaven čtyřmi kanály, z~nichž zde jsou použity tři. Pro přepínání mezi nimi je v~převodníku integrován multiplexor. ADC může pracovat při napájecím napětí v~rozsahu od 2.7V do 5V. Od napájecího napětí, které je současně i referenčním (viz. Příloha \ref[priloha_motor]), se následně odvíjí frekvence hodinového signálu, kterou je obvod časován a slouží i k~přenosu dat. Při $U_{ref}$=2.7V je maximální frekvence 2Mhz, pro $U_{ref}$=5 pak $f_{CLK}$=5Mhz \cite[adc_man].
+Pro měření proudů protékajících jednotlivými fázemi motoru je použita sada senzorů využívajících Hallova efektu. Napětí je pak převedeno na digitální hodnotu 12 bitovým A/D převodníkem\fnote{ ADS7841 \url{http://www.ti.com/lit/ds/symlink/ads7841.pdf}}. Tento integrovaný obvod je vybaven čtyřmi kanály, z~nichž zde jsou použity tři. Pro přepínání mezi nimi je v~převodníku integrován multiplexor. ADC může pracovat při napájecím napětí v~rozsahu od 2.7V do 5V. Od napájecího napětí, které je současně i referenčním (viz. Příloha \ref[priloha_motor]), se následně odvíjí frekvence hodinového signálu, kterou je obvod časován a slouží i k~přenosu dat. Při $U_{ref}$=2.7V je maximální frekvence 2Mhz, pro $U_{ref}$=5 pak $f_{CLK}$=5Mhz \cite[adc_man].
 
  Jedná se o~převodník s~postupnou aproximací. Tento druh převodníku vyžaduje pro každý převod pevně stanovený počet hodinových cyklů. Při každém hodinovém cyklu pak teoreticky dochází k~zpřesnění o~jeden bit. Realizován bývá obvykle s~využitím několika komponent. Jednou z~nich je jednoduchý analogový vzorkovač, který udrží měřenou veličinu neměnnou po čas nutný pro konverzi. Dalšími součástmi jsou DA převodník a aproximační registr (SAR). Komunikace s~AD převodníkem je podrobně probrána v~sekci \ref[adc_sec].
  
@@ -831,7 +831,7 @@ Po jeho úpěšném průběhu je možné již používat doručená data v~pamě
 
 \secc Pořadí dat v~přenosu
  
-  Prvním přenášeným bitem komunikace je bit s~nejvyšší hodnotou (MSB), tedy bit "dat_reg(127)" na straně FPGA. Za předpokladu, že data pro přenos jsou v~Raspberry uchovávána v~poli charů a odpadnou tak problémy s~endianitou (instrukce ARMv6 jsou defaultně little-endian \fnote{ARMv6 Support for mixed-endian data \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0301h/Cdfbbchb.html}}), bude prvním přenášeným bitem MS bit v~"tx[0]". Pozice a funkce bitů v~přenosech z~Raspberry Pi do FPGA a v~opačném směru jsou zdokumentované v~tabulce \ref[data_order1_tab] a \ref[data_order2_tab].
+  Prvním přenášeným bitem komunikace je bit s~nejvyšší hodnotou (MSB), tedy bit "dat_reg(127)" na straně FPGA. Za předpokladu, že data pro přenos jsou v~Raspberry uchovávána v~poli charů a odpadnou tak problémy s~endianitou (instrukce ARMv6 jsou defaultně little-endian \fnote{ARMv6 Support for mixed-endian data \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0301h/Cdfbbchb.html}}), bude prvním přenášeným bitem MS bit v~"tx[0]". Pozice a funkce bitů v~přenosech z~Raspberry Pi do FPGA a v~opačném směru jsou zdokumentované v~tabulkách \ref[data_order1_tab] a \ref[data_order2_tab].
   
  \medskip \clabel[data_order1_tab]{Pořadí dat v~přenosu A}
 \ctable{ccc}{ 
@@ -870,7 +870,7 @@ Po jeho úpěšném průběhu je možné již používat doručená data v~pamě
  
 Měření  statorových proudů je nutné k~plnému momentovému řízení nebo k~řízení bez polohových senzorů (sensorless control). 
 
-Plošný spoj výkonového stupně {\em 3P-MOTOR-DRIVER-1} proto obsahuje čtyřkanálový, 12-bitový A/D převodník ADS7841. Na vstup převodníku jsou připojeny senzory proudů protékajících jednotlivými fázemi, které využívají Hallova jevu. Převodník může pracovat buď ve 12-bitovém nebo jen v~8-bitovém režimu \cite[adc_man]. 
+Plošný spoj výkonového stupně {\em 3P-MOTOR-DRIVER-1} proto obsahuje čtyřkanálový, 12-bitový A/D převodník ADS7841. Na vstup převodníku jsou připojeny napěťové výstupy senzorů proudů protékajících jednotlivými fázemi, které využívají Hallova jevu. Převodník může pracovat buď ve 12-bitovém nebo jen v~8-bitovém režimu \cite[adc_man]. 
 
 Důležité je zvolit správnou hodinovou frekvenci, která bude přivedena na hodinový vstup převodníku. Její maximální hodnota se pro daný typ převodníku liší podle velikosti napájecího napětí obvodu, viz sekce \ref[vyk_hw_sec]. Obvod je stejně, jako celé FPGA, napájen napětím 3.3V, které je přivedeno z~RPi. Hodinová frekvence tak byla stanovena na hodnotu 2.08Mhz. 
 
@@ -891,9 +891,9 @@ Komponenta "adc_reader", kromě frekvenční děličky, která je spíše vedlej
 \caption/f Průbeh konverze v~režimu 15 hodinových pulzů na převod (Zdroj:Texas Instruments)
 \medskip
 
-Komponenta "adc_reader" pak implementuje komunikaci pomocí stavového automatu. Každý ze stavů generuje buď logickou úroveň 1 či 0 do signálu "DCLK". Pokud tak nastala při přechodu mezi dvěma stavy sestupná hrana,   je zapsán bit řídícího slova na vodič "DIN". Ve stejné chvíli také dochází k~zápisu hodnoty na vodič "DOUT" na straně ADC. Při nástupné hraně jsou naopak hodnoty na vodičích "DIN" a "DOUT" vzorkovány. Protože k~přechodu mezi dvěma stavy dochází vždy synchronně s~nástupnou hranou hodinového signálu, má signál "DCLK" vysílaný do převodníku práve poloviční frekvenci.
+Komponenta "adc_reader" pak implementuje komunikaci pomocí stavového automatu. Každý ze stavů generuje buď logickou úroveň 1 či 0 do signálu "DCLK". Pokud tak nastala při přechodu mezi dvěma stavy sestupná hrana,   je zapsán bit řídícího slova na vodič "DIN". Ve stejné chvíli také dochází k~zápisu hodnoty na vodič "DOUT" na straně ADC. Při nástupné hraně jsou naopak hodnoty na vodičích "DIN" a "DOUT" vzorkovány. Protože k~přechodu mezi dvěma stavy dochází vždy synchronně s~nástupnou hranou hodinového signálu, má signál "DCLK" vysílaný do převodníku právě poloviční frekvenci.
 
-Nutnost přecházet mezi stavy však neexistuje jen u~konfigurace převodníku a vyčítání hodnot. Je třeba totiž přepínat i mezi jednotlivými kanály. Výše zmíněný stavový automat je tak logicky vnořen do dalšího, který přepíná právě mezi odečítáním proudů z~jednotlivých fází. 
+Nutnost přecházet mezi stavy však neexistuje jen u~konfigurace převodníku a vyčítání hodnot. Je třeba také přepínat i mezi jednotlivými kanály. Výše zmíněný stavový automat je tak logicky vnořen do dalšího, který přepíná právě mezi odečítáním proudů z~jednotlivých fází. 
 
 Konfiguraci řídicího slova a adresy kanálů všech tří fází ukazují tabulky \ref[ctrl_word_tab] a \ref[address_tab].
 
@@ -924,7 +924,7 @@ Konfiguraci řídicího slova a adresy kanálů všech tří fází ukazují tab
 
 \secc Sčítání více hodnot proudu
 
-Po první implementaci měření proudů bylo patrné, že nedochází k~ustálení hodnot přibližně na posledních několika bitech. Částečným zpřesněním může být použití výběrového průměru namísto jen jedné změřené hodnoty.
+Po první implementaci měření proudů bylo patrné, že nedochází k~ustálení hodnot přibližně na posledních čtyř bitech. Částečným zpřesněním může být použití výběrového průměru namísto jen jedné změřené hodnoty.
 
  K~vyčtení hodnoty z~AD převodníku dochází v~porovnání s~frekvencí řídicí smyčky (1kHz) poměrně rychle. Při 15 hodinových cyklech nutných pro jednu konverzi a hodinové frekvenci 2.08Mhz, může dojít až ke 138 převodům. Pro každou měřenou fázi se jedná přibližně o~46 převodů. Byla provedena následující úvaha:
 
@@ -944,13 +944,13 @@ Pro jeho směrodatnou odchylku $\sigma_{\overline{\bf{x}}_n}$ pak platí:
 
 $$\sigma_{\overline{\bf{x}}_n}={{1}\over{\sqrt{n}}}\sigma_x \eqmark$$
 
-Za předpokladu, že $n=46$ tedy platí, že $\sigma_{\overline{\bf{x}}_{46}}\approx{{1}\over{6.8}}\sigma_x$. Směrodatná odchylka výběrového průměru se oproti odečtení samostatných měření zmenšila 6.8x. A~protože $\log_2 6.8\approx2.7$, je možno říci, že jsme získali téměř tři bity informace navíc.
+Za předpokladu, že $n=46$ tedy platí, že $\sigma_{\overline{\bf{x}}_{46}}\approx{{1}\over{6.8}}\sigma_x$. Směrodatná odchylka výběrového průměru se oproti odečtení samostatných měření zmenšila 6.8x. A~protože $\log_2 6.8\approx2.7$, je možno říci, že pokud byl původní signál snímán s dostatečným šumem, byly získány téměř tři bity informace navíc.
 
 \sec Generování PWM
 
 Generováním signálů PWM se zabývá komponenta "mcpwm". Její návrh implementuje 11-bitovou PWM.
 
- Základem funkce je nastavení příslušného výstupu na hodnotu logická 1 při průchodu čítače "count" nulou a ukončení plnění PWM cyklu při shodně čítače "count" se zadanou nodnotou plnění, uloženou v~registru "match_reg". Hodnota "match" je odesílána ve finální podobě již z~Raspberry Pi. Čítač "count" je inkrementován hlavním hodinovým signálem "gpio_clk" o~frekvenci 50MHz, frekvence PWM je tedy $50000/2^{11}\approx 24.4$kHz.
+ Základem funkce je nastavení příslušného výstupu na hodnotu logická 1 při průchodu čítače "count" nulou a ukončení plnění PWM cyklu při shodně čítače "count" se zadanou hodnotou plnění, uloženou v~registru "match_reg". Hodnota "match" je odesílána ve finální podobě již z~Raspberry Pi. Čítač "count" je inkrementován hlavním hodinovým signálem "gpio_clk" o~frekvenci 50MHz, frekvence PWM je tedy $50000/2^{11}\approx 24.4$kHz.
 
 Průchod čítače "count" nulou je mimo jiné detekován nastavením signálu "sync" po dobu jednoho hodinového cyklu na hodnotu 1.
 \ttline-1
@@ -1011,7 +1011,7 @@ Strategie "SCHED_OTHER" přiděluje úlohám poměrnou část strojového času 
 
 Pro RT aplikace jsou využívány strategie "SCHED_FIFO" a "SCHED_RR", které mají v~okamžiku přeplánování přednost před všemi ostatními. Strategie "SCHED_FIFO" a "SCHED_RR" využívají plánování s~pevnými prioritami. Pokud je připraveno k~běhu vlákno s~vyšší prioritou, než má vlákno právě běžicí, je běžící vlákno v~nebližší možné době nahrazeno vláknem z~vyšší prioritou.
 
-Omezou dobu odezvy, za kterou dojde k~přeplánování, pak garantuje pouze jádro s~aplikovaným RT rozšířením, tím že odstraňuje nepřerušitelné úseky kódu ve službách a servisních vláknch jádra OS.
+Omezou dobu odezvy, za kterou dojde k~přeplánování, pak garantuje pouze jádro s~aplikovaným RT rozšířením, tím že minimalizuje nepřerušitelné úseky kódu ve službách a servisních vláknch jádra OS.
 
 Priority vláken v~rámci strategií "SCHED_FIFO" a "SCHED_RR" je možné explicitně stanovit v~uživatelském kódu. Rozsah jejich hodnot se pohybuje mezi 99 a 1. Hodnota 50 je výchozí priorita úloh obsluhujících v~RT variantě jádra přerušení od periférií. Platí, že čím vyšší hodnota, tím vyšší priorita. 
 
@@ -1104,7 +1104,7 @@ Implementace v souboru "main_pmsm.c".
 
 Při vyšším zatížení systému může docházet k~odkládání a výměně procesů (Swapping) mezi hlavní (RAM) a sekundární pamětí počítače. 
 
-Odložení procesu aplikace, vede ke zvýšení reakčních časů na vnější události. U~magnetických disků může tímto způsobem narůstat zpoždění o~až několik milisekund.\cite[iops] Z~tohoto důvodu je nutné, aby proces řídicí aplikace zůstal uzamčen v~primární paměti. K~tomuto účelu je využíváno systémové volání "int mlockall(int flags)", které zajistí uzamčení stránek v~hlavní paměti.
+Odložení procesu aplikace, vede ke zvýšení reakčních časů na vnější události. U~magnetických disků může tímto způsobem narůstat zpoždění o~až několik desítek milisekund.\cite[iops] Z~tohoto důvodu je nutné, aby proces řídicí aplikace zůstal uzamčen v~primární paměti. K~tomuto účelu je využíváno systémové volání "int mlockall(int flags)", které zajistí uzamčení stránek v~hlavní paměti.
 
 Parametr "int flags" definuje, zda budou v~hlavní paměti uzamčeny jen aktuálně namapované stránky (makro "MCL_CURRENT") nebo stránky namapované později (makro "MCL_FUTURE"). Tato makra je možno použít současně. Příklad použití je uveden níže:
 
@@ -1132,7 +1132,7 @@ Z~takto zjištěné polohy je následně možné řídit komutaci tak, aby bylo 
  
 \medskip \clabel[hall_pos_obr]{Rozložení výstupů z~Hallových sond}
 \picw=9cm \cinspic hall_pos.pdf
-\caption/f Rozložení výstupů z~Hallových sond v~elktrickém cyklu (trojice bitů uprostřed [Hall1 Hall2 Hall3]). Závorkované hodnoty při vnějším okraji jsou přibližné vzdálenosti od indexu vypočténé pomocí IRC.
+\caption/f Rozložení výstupů z~Hallových sond v~elktrickém cyklu (trojice bitů uprostřed [Hall1 Hall2 Hall3]). Závorkované hodnoty při vnějším okraji jsou přibližné vzdálenosti od indexu vypočténé pomocí IRC, kalibrované pro tento motor.
 \medskip 
 
 V~obrázku \ref[hall_pos_obr] jsou pomocí šipek na barevných soustředných kružnicích vyznačeny dva směry pohybu rotoru. Pro každý ze směrů různě vybarvéné úseky dané kružnice značí, jaká fáze musí být při daném natočení napájena, aby došlo k~pohybu žádaným směrem. Barevnými čísly u~šipek směřujících od středu kružnic jsou pak označeny pozice, ve kterých dojde k~ustálení motoru při napájení pouze dané fáze.
@@ -1269,7 +1269,7 @@ Nyní zbývá přepočítat fázová napětí a podle jejich hodnot nastavit š�
 
 \sec Řízení rychlosti
 
-Pro regulaci rychlosti motoru je používáno vektorové řízení. V rámci testovaci aplikace byl navržen jednoduchý PI regulátor pomocí nástroje {\em rltool} z prostředí MATLAB. Zdrojový kód regulátoru se nachází v soubru "controllers.c".  Naměřené průběhy této regulace jsou uvedeny v sekci \ref[zazn_test_sec].
+Pro regulaci rychlosti motoru je používáno vektorové řízení. V rámci testovaci aplikace byl navržen jednoduchý PI regulátor pomocí nástroje {\em rltool} z prostředí MATLAB. Zdrojový kód regulátoru se nachází v soubru "controllers.c".  Naměřené průběhy této regulace jsou uvedeny v sekci \ref[zazn_test_sec]. Jako vhodná rychlost pro testování byla zvolena rychlost 100 IRC za 50 ms a aktuální rychlost je také zobrazená jako počet pulzů za shodnou dobu.
 	
 	\label[zaver_chap]
  \chap Závěr
@@ -1306,7 +1306,7 @@ Detail průběhů PWM a proudů z~obrázku \ref[prubehy_pwma1_obr] je na obrázk
 \label[zazn_test_sec]
 \sec Záznamy průběhů testovací aplikací
 
-Možnost vytvořit záznam o průběhu řízení je implementována i v~testovací aplikaci, v souboru "logs.c". Průběžné hodnoty rychlosti, měřených proudů a šířek plnění PWM jsou vzorkovány jednou za 2 cyly řídicí smyčky. Následně jsou uloženy do souboru "logs.log" a v~textové formě zpracovány v~programu MATLAB. Na obrázku  \ref[t_prubehy_1] je odezva systému na změnu pevně volené šířky plnění z~0 na 100.
+Možnost vytvořit záznam o~průběhu řízení je implementována i v~testovací aplikaci, v~souboru "logs.c". Průběžné hodnoty rychlosti, měřených proudů a šířek plnění PWM jsou vzorkovány jednou za 2 cyly řídicí smyčky. Následně jsou uloženy do souboru "logs.log" a v~textové formě zpracovány v~programu MATLAB. Na obrázku  \ref[t_prubehy_1] je odezva systému na změnu pevně volené šířky plnění z~0 na 100.
  
  \medskip \clabel[t_prubehy_1]{Záznam průběhu při odezvě na změnu pevné šířky plnění}
 \picw=16cm \cinspic duty100_step.pdf
@@ -1354,9 +1354,9 @@ Cílem  práce  je  realizovat řízení pro  synchronní bezkartáčové motory
   
   Pro možnou realizaci plného momentového řízení a řízení bez polohových senzorů (sensorless control) je nezbyná znalost proudů, protékajících vinutím statoru. Jejich snímaní je prováděno s~využitím Hallova jevu. Napětí, takto získané je převáděno 12-bitovým AD převodníkem. Zde bylo provedeno zpřesnění snímání tohoto napětí. Nyní je místo jedné odečtené hodnoty posílán řídicí jednotce jejich výběrový průměr. Toto řešeni vedlo k~redukci šumu a tím krozšíření přesnosti naměřených hodnot.
   
-  Vlastní sekce je věnována implementaci požadavků a programovým konstrukcím, které musejí být dodrženy v~řídicí aplikaci využívající RT-rozšíření jádra Linux. Lze konstatovat, že bez jejich naplnění nelze uživatelské aplikaci garantovat deterministické chování. Samotná aplikace RT-rozšíření tak způsobí pouze prodloužení průměrného času odezvy na vnější událost, aniž by přinášela jakékoli výhody.
+  Vlastní sekce je věnována implementaci požadavků a programovým konstrukcím, které musejí být dodrženy v~řídicí aplikaci využívající RT-rozšíření jádra Linux. Lze konstatovat, že bez jejich naplnění nelze uživatelské aplikaci garantovat deterministické chování. Samotná aplikace RT-rozšíření by tak vedla pouze k~prodloužení průměrného času odezvy na vnější událost, aniž by přinášela jakékoli výhody.
   
-  Pro výukové účely jsou implementovány dvě jednoduché metody elektronické komutace. Při použití komutace využívající jen výstup z~Hallových sond dochází k~nežádoucím vibracím motoru. Jedná se ale o~jedinou možnost, pokud nemáme k~dispozici přesnou hodnotu natočení rotoru v~rámci celého rozsahu otáčeni nebo dostatečně přesné měření proudu.
+  Pro výukové účely jsou implementovány dvě jednoduché metody elektronické komutace. Při použití komutace využívající jen výstup z~Hallových sond dochází k~nežádoucím vibracím motoru. Jedná se ale o~jedinou možnost, pokud nemáme k~dispozici přesnou hodnotu natočení rotoru v~rámci celého rozsahu otáčení nebo dostatečně přesné měření proudu.
   
    S~přesnou znalostí polohy je možné provádět komutaci založenou na fázovém posunu všech fází o~$120^\circ$ a realizovat tak jednoduché napěťové řízení. Toto je pak možné rozšířit a s~využitím matematických postupů, popsaných výše, implementovat vektorové řízení. V rámci vektorového řízení bylo realizováno řízení rychlosti a polohy s~využitím PI a P regulátorů.
   
